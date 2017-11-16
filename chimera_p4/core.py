@@ -73,7 +73,7 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 		distOrders[i] = [] 
 		for j, dist in enumerate(distV): 
 			if dist < mergeTol: 
-		  		distOrders[i].append((dist, j)) 
+				distOrders[i].append((dist, j)) 
 		distOrders[i].sort() 
   
 	# we now know the "distances" and have rank-ordered list of 
@@ -91,60 +91,60 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 	
 			mergeThem = False 
 			if not distOrders[fi]: 
-		  		featsInPlay.remove(fi) 
-		  		continue 
+				featsInPlay.remove(fi) 
+				continue 
 			dist, nbr = distOrders[fi][0] 
 			if nbr not in featsInPlay: 
-		  		continue 
+				continue 
 			if distOrders[nbr][0][1] == fi: 
-		  		# print 'direct:',fi,nbr 
-		  		mergeThem = True 
+				# print 'direct:',fi,nbr 
+				mergeThem = True 
 			else: 
-		  		# it may be that there are several points at about the same distance, 
-		  		# check for that now 
-		  		if (feq(distOrders[nbr][0][0], dist)): 
+				# it may be that there are several points at about the same distance, 
+				# check for that now 
+				if (feq(distOrders[nbr][0][0], dist)): 
 					for distJ, nbrJ in distOrders[nbr][1:]: 
-			  			if feq(dist, distJ): 
+						if feq(dist, distJ): 
 							if nbrJ == fi: 
-				  				# print 'indirect: ',fi,nbr 
-				  				mergeThem = True 
-				  				break 
-			  			else: 
+								# print 'indirect: ',fi,nbr 
+								mergeThem = True 
+								break 
+						else: 
 							break 
 			# print '    bottom:',mergeThem 
 			if mergeThem: 
-		  		break 
-	  	if mergeThem: 
+				break 
+		if mergeThem: 
 			res = True 
 			featI = fm.GetFeature(fi) 
 			nbrFeat = fm.GetFeature(nbr) 
    
 			if mergeMethod == FMU.MergeMethod.WeightedAverage: 
-		  		newPos = featI.GetPos() * featI.weight + nbrFeat.GetPos() * nbrFeat.weight 
-		  		newPos /= (featI.weight + nbrFeat.weight) 
-		  		newWeight = (featI.weight + nbrFeat.weight) / 2 
+				newPos = featI.GetPos() * featI.weight + nbrFeat.GetPos() * nbrFeat.weight 
+				newPos /= (featI.weight + nbrFeat.weight) 
+				newWeight = (featI.weight + nbrFeat.weight) / 2 
 			elif mergeMethod == FMU.MergeMethod.Average: 
-		  		newPos = featI.GetPos() + nbrFeat.GetPos() 
-		  		newPos /= 2 
-		  		newWeight = (featI.weight + nbrFeat.weight) / 2 
+				newPos = featI.GetPos() + nbrFeat.GetPos() 
+				newPos /= 2 
+				newWeight = (featI.weight + nbrFeat.weight) / 2 
 			elif mergeMethod == FMU.MergeMethod.UseLarger: 
-		  		if featI.weight > nbrFeat.weight: 
+				if featI.weight > nbrFeat.weight: 
 					newPos = featI.GetPos() 
 					newWeight = featI.weight 
-		  		else: 
+				else: 
 					newPos = nbrFeat.GetPos() 
 					newWeight = nbrFeat.weight 
    
 			featI.SetPos(newPos) 
 			featI.weight = newWeight 
-   			"""
-   			if dirMergeMode == FMU.DirMergeMode.Sum:
-   				if hasattr(featI, 'featDirs') and hasattr(nbrfeat, 'featDirs'):
+			"""
+			if dirMergeMode == FMU.DirMergeMode.Sum:
+				if hasattr(featI, 'featDirs') and hasattr(nbrfeat, 'featDirs'):
 					sumDirs = featI.featDirs + nbrfeat.featDirs
 					ps, fType = sumDirs
 					for tail, head in ps:
 						tails
-   						featI.featDirs = numpy
+						featI.featDirs = numpy
 			"""
 			# nbr and fi are no longer valid targets: 
 			# print 'nbr done:',nbr,featsToRemove,featsInPlay 
@@ -152,15 +152,15 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 			featsInPlay.remove(fi) 
 			featsInPlay.remove(nbr) 
 			for nbrList in distOrders: 
-		  		try: 
+				try: 
 					nbrList.remove(fi) 
-		  		except ValueError: 
+				except ValueError: 
 					pass 
-		  		try: 
+				try: 
 					nbrList.remove(nbr) 
-		  		except ValueError: 
+				except ValueError: 
 					pass 
-	  	else: 
+		else: 
 			# print ">>>> Nothing found, abort" 
 			break 
 	featsToRemove.sort() 
@@ -338,3 +338,26 @@ def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1):
 	chimera.statusline.show_message(msg)
 	
 	return True
+
+class Controller(object):
+
+	"""
+	The controller manages the communication between the UI (graphic interface)
+	and the data model. Actions such as clicks on buttons, enabling certain areas, 
+	or running external programs, are the responsibility of the controller.
+	"""
+	def __init__(self, *args, **kwargs):
+		return
+
+
+class Model(object):
+
+	"""
+	The model controls the data we work with. Normally, it'd be a Chimera molecule
+	and some input files from other programs. The role of the model is to create
+	a layer around those to allow the easy access and use to the data contained in
+	those files
+	"""
+
+	def __init__(self, *args, **kwargs):
+		return
