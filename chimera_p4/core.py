@@ -10,11 +10,14 @@ from textwrap import dedent
 from Bld2VRML import openFileObject as openBildFileObject
 
 import os
+import numpy as np
 
 from rdkit import Chem, RDConfig
 from rdkit.Chem import SanitizeMol
 from rdkit.Chem import AllChem
-from rdkit.Chem.FeatMaps import FeatMaps, FeatMapUtils
+from rdkit.Chem.FeatMaps import FeatMaps
+from rdkit.Chem.FeatMaps import FeatMapUtils as FMU
+from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
 
 # The RDKit_BondType dictionary is defined to convert float bond orders into RDKit bond types
 RDKit_BondType = {
@@ -30,6 +33,142 @@ RDKit_BondType = {
 	4.5 : Chem.BondType.FOURANDAHALF,
 	5.5 : Chem.BondType.FIVEANDAHALF
 }
+
+_featColors = { 
+	'Donor': '0 1 1', 
+	'Acceptor': '1 0 1', 
+	'NegIonizable': '1 0 0', 
+	'PosIonizable': '0 0 1', 
+	'ZnBinder': '1 .5 .5', 
+	'Aromatic': '1 .8 .2', 
+	'LumpedHydrophobe': '.5 .25 0', 
+	'Hydrophobe': '.5 .25 0', 
+} 
+
+def feq(v1, v2, tol=1e-4): 
+	return abs(v1 - v2) < tol 
+
+def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5, 
+					  dirMergeMode=FMU.DirMergeMode.NoMerge, mergeMethod=FMU.MergeMethod.WeightedAverage, 
+					  compatFunc=FMU.familiesMatch): 
+	""" 
+   
+	  NOTE that mergeTol is a max value for merging when using distance-based 
+	  merging and a min value when using score-based merging. 
+   
+	  returns whether or not any points were actually merged 
+   
+	""" 
+	FMU.MergeMetric.valid(mergeMetric) 
+	FMU.MergeMethod.valid(mergeMethod) 
+	FMU.DirMergeMode.valid(dirMergeMode) 
+   
+	res = False 
+	if mergeMetric == FMU.MergeMetric.NoMerge: 
+		return res 
+	dists = FMU.GetFeatFeatDistMatrix(fm, mergeMetric, mergeTol, dirMergeMode, compatFunc) 
+	distOrders = [None] * len(dists) 
+	for i in range(len(dists)): 
+		distV = dists[i] 
+		distOrders[i] = [] 
+		for j, dist in enumerate(distV): 
+			if dist < mergeTol: 
+		  		distOrders[i].append((dist, j)) 
+		distOrders[i].sort() 
+  
+	# we now know the "distances" and have rank-ordered list of 
+	# each point's neighbors. Work with that. 
+   
+	# progressively merge nearest neighbors until there 
+	# are no more points left to merge 
+	featsInPlay = list(range(fm.GetNumFeatures())) 
+	featsToRemove = [] 
+	# print '--------------------------------' 
+	while featsInPlay: 
+		# find two features who are mutual nearest neighbors: 
+		fipCopy = featsInPlay[:] 
+		for fi in fipCopy: 
+	
+			mergeThem = False 
+			if not distOrders[fi]: 
+		  		featsInPlay.remove(fi) 
+		  		continue 
+			dist, nbr = distOrders[fi][0] 
+			if nbr not in featsInPlay: 
+		  		continue 
+			if distOrders[nbr][0][1] == fi: 
+		  		# print 'direct:',fi,nbr 
+		  		mergeThem = True 
+			else: 
+		  		# it may be that there are several points at about the same distance, 
+		  		# check for that now 
+		  		if (feq(distOrders[nbr][0][0], dist)): 
+					for distJ, nbrJ in distOrders[nbr][1:]: 
+			  			if feq(dist, distJ): 
+							if nbrJ == fi: 
+				  				# print 'indirect: ',fi,nbr 
+				  				mergeThem = True 
+				  				break 
+			  			else: 
+							break 
+			# print '    bottom:',mergeThem 
+			if mergeThem: 
+		  		break 
+	  	if mergeThem: 
+			res = True 
+			featI = fm.GetFeature(fi) 
+			nbrFeat = fm.GetFeature(nbr) 
+   
+			if mergeMethod == FMU.MergeMethod.WeightedAverage: 
+		  		newPos = featI.GetPos() * featI.weight + nbrFeat.GetPos() * nbrFeat.weight 
+		  		newPos /= (featI.weight + nbrFeat.weight) 
+		  		newWeight = (featI.weight + nbrFeat.weight) / 2 
+			elif mergeMethod == FMU.MergeMethod.Average: 
+		  		newPos = featI.GetPos() + nbrFeat.GetPos() 
+		  		newPos /= 2 
+		  		newWeight = (featI.weight + nbrFeat.weight) / 2 
+			elif mergeMethod == FMU.MergeMethod.UseLarger: 
+		  		if featI.weight > nbrFeat.weight: 
+					newPos = featI.GetPos() 
+					newWeight = featI.weight 
+		  		else: 
+					newPos = nbrFeat.GetPos() 
+					newWeight = nbrFeat.weight 
+   
+			featI.SetPos(newPos) 
+			featI.weight = newWeight 
+   			"""
+   			if dirMergeMode == FMU.DirMergeMode.Sum:
+   				if hasattr(featI, 'featDirs') and hasattr(nbrfeat, 'featDirs'):
+					sumDirs = featI.featDirs + nbrfeat.featDirs
+					ps, fType = sumDirs
+					for tail, head in ps:
+						tails
+   						featI.featDirs = numpy
+			"""
+			# nbr and fi are no longer valid targets: 
+			# print 'nbr done:',nbr,featsToRemove,featsInPlay 
+			featsToRemove.append(nbr) 
+			featsInPlay.remove(fi) 
+			featsInPlay.remove(nbr) 
+			for nbrList in distOrders: 
+		  		try: 
+					nbrList.remove(fi) 
+		  		except ValueError: 
+					pass 
+		  		try: 
+					nbrList.remove(nbr) 
+		  		except ValueError: 
+					pass 
+	  	else: 
+			# print ">>>> Nothing found, abort" 
+			break 
+	featsToRemove.sort() 
+	for i, fIdx in enumerate(featsToRemove): 
+		fm.DropFeature(fIdx - i) 
+	return res 
+
+
 
 class p4_element(object):
 
@@ -73,7 +212,7 @@ class p4_element(object):
 		bild = """
 		.color {}
 		.arrow {} {} {} {} {} {} {} {} {}
-		""".format(self.color, x1, y1, z1, x2, y2, z2, 0.1, 0.2, 0.8)
+		""".format(self.color, x1, y1, z1, x2, y2, z2, 0.05, 0.1, 0.8)
 		return self._build_vrml(bild)
 
 	def _build_vrml(self, bild, name=None):
@@ -117,7 +256,7 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 
 	return mol, atom_map
 
-def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic'), mergeMetric=1, mergeTol=1.5, dirMergeMode=0, minRepeats=5):
+def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic'), mergeMetric=1, mergeTol=2.5, dirMergeMode=1, minRepeats=1):
 	rdkit_mols = []
 	rdkit_maps = []
 	for mol in molecules:
@@ -135,12 +274,38 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rawFeats=[]
 	for m in rdkit_mols:
 		for f in fdef.GetFeaturesForMol(m):
+			if f.GetFamily() == 'Acceptor':
+				aids = f.GetAtomIds() 
+				if len(aids) == 1: 
+					featAtom = m.GetAtomWithIdx(aids[0]) 
+					hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
+					if len(hvyNbrs) == 1: 
+						f.featDirs = FeatDirUtils.GetAcceptor1FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
+					elif len(hvyNbrs) == 2: 
+						f.featDirs = FeatDirUtils.GetAcceptor2FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
+					elif len(hvyNbrs) == 3: 
+						f.featDirs = FeatDirUtils.GetAcceptor3FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
+			elif f.GetFamily() == 'Donor':
+				aids = f.GetAtomIds() 
+				if len(aids) == 1: 
+					featAtom = m.GetAtomWithIdx(aids[0]) 
+					hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
+					if len(hvyNbrs) == 1: 
+						f.featDirs = FeatDirUtils.GetDonor1FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
+					elif len(hvyNbrs) == 2: 
+						f.featDirs = FeatDirUtils.GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
+					elif len(hvyNbrs) == 3: 
+						f.featDirs = FeatDirUtils.GetDonor3FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol))
+			elif f.GetFamily() == 'Aromatic':
+				f.featDirs = FeatDirUtils.GetAromaticFeatVects(m.GetConformer(-1), f.GetAtomIds(), f.GetPos(-1), scale=(0.6*mergeTol))
+	   
 			rawFeats.append(f)
+
 	# filter that list down to only include the ones we're intereted in 
 	featList = [f for f in rawFeats if f.GetFamily() in keep]
 
 	fmap = FeatMaps.FeatMap(feats = featList,weights=[1]*len(featList),params=fmParams)
-	matrix = FeatMapUtils.GetFeatFeatDistMatrix(fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FeatMapUtils.familiesMatch)
+	matrix = FMU.GetFeatFeatDistMatrix(fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
 	p4map = FeatMaps.FeatMap(params=fmParams)
 	for i, vector in enumerate(matrix):
 		feat_indexs = [vector.index(x) for x in vector if x<100000]
@@ -150,34 +315,26 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 				p4map.AddFeature(fmap._feats[feat_index], weight=1)
 	Merge = True
 	while Merge == True:
-		Merge = FeatMapUtils.MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol)
-
+		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
 	return p4map
 
-def chimera_p4(molecules_sel, mergeTol=1.5):
+def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1):
 	molecules = molecules_sel.molecules()
 
-	p4map = calc_p4map(molecules)
+	p4map = calc_p4map(molecules, mergeTol=mergeTol, minRepeats=minRepeats)
 
 	for feat in p4map._feats:
 		size_sphere = mergeTol/4
-		if feat.GetFamily() == 'Acceptor':
-			p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color='red')
-		elif feat.GetFamily() == 'Donor':
-			p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color='blue')
-		elif feat.GetFamily() == 'PosIonizable':
-			p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color='green')
-		elif feat.GetFamily() == 'NegIonizable':
-			p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color='gray')
-		elif feat.GetFamily() == 'Aromatic':
-			p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color='yellow')
-		
+		p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
 		p4_elem.draw()
+		
+		if hasattr(feat, 'featDirs'):
+			ps, fType = feat.featDirs
+			for tail, head in ps:
+				p4_elem = p4_element(shape="arrow", origin=tail, end=head, color=_featColors[feat.GetFamily()])
+				p4_elem.draw() 
 
-	msg = "Chimera pharmacophore is working"
+	msg = "Chimera pharmacophore done"
 	chimera.statusline.show_message(msg)
 	
 	return True
-
-
-	#p4_elem3 = p4_element(shape="arrow", origin=(0,0,0), end=(1,1,1), color='green')
