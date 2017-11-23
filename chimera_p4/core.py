@@ -11,8 +11,9 @@ from Bld2VRML import openFileObject as openBildFileObject
 
 import os
 import numpy as np
+import math
 
-from rdkit import Chem, RDConfig
+from rdkit import Chem, RDConfig, Geometry
 from rdkit.Chem import SanitizeMol
 from rdkit.Chem import AllChem
 from rdkit.Chem.FeatMaps import FeatMaps
@@ -44,7 +45,6 @@ _featColors = {
 	'LumpedHydrophobe': '.5 .25 0', 
 	'Hydrophobe': '.5 .25 0', 
 } 
-
 def feq(v1, v2, tol=1e-4): 
 	return abs(v1 - v2) < tol 
 
@@ -168,6 +168,82 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 		fm.DropFeature(fIdx - i) 
 	return res 
 
+def _GetDonor2FeatVects(conf, featAtoms, scale=1.5): 
+	""" 
+	Get the direction vectors for Donor of type 2 
+   
+	This is a donor with two heavy atoms as neighbors. The atom may are may not have 
+	hydrogen on it. Here are the situations with the neighbors that will be considered here 
+	  1. two heavy atoms and two hydrogens: we will assume a sp3 arrangement here 
+	  2. two heavy atoms and one hydrogen: this can either be sp2 or sp3 
+	  3. two heavy atoms and no hydrogens 
+	   
+	ARGUMENTS: 
+	  featAtoms - list of atoms that are part of the feature 
+	  scale - length of the direction vector 
+	""" 
+	assert len(featAtoms) == 1 
+	aid = featAtoms[0] 
+	mol = conf.GetOwningMol() 
+   
+	cpt = conf.GetAtomPosition(aid) 
+   
+	# find the two atoms that are neighbors of this atoms 
+	nbrs = list(mol.GetAtomWithIdx(aid).GetNeighbors()) 
+	assert len(nbrs) >= 2 
+   
+	hydrogens = [] 
+	tmp = [] 
+	while len(nbrs): 
+		nbr = nbrs.pop() 
+		if nbr.GetAtomicNum() == 1: 
+			hydrogens.append(nbr) 
+	#	else: 
+	#		tmp.append(nbr) 
+	#nbrs = tmp 
+   
+	if len(nbrs) == 2: 
+		# there should be no hydrogens in this case 
+		assert len(hydrogens) == 0 
+		# in this case the direction is the opposite of the average vector of the two neighbors 
+		bvec = _findAvgVec(conf, cpt, nbrs) 
+		bvec *= (-1.0 * scale) 
+		bvec += cpt 
+		return ((cpt, bvec), ), 'linear' 
+	elif len(nbrs) == 3: 
+		assert len(hydrogens) == 1 
+		# this is a little more tricky we have to check if the hydrogen is in the plane of the 
+		# two heavy atoms (i.e. sp2 arrangement) or out of plane (sp3 arrangement) 
+   
+		# one of the directions will be from hydrogen atom to the heavy atom 
+		hid = hydrogens[0].GetIdx() 
+		bvec = conf.GetAtomPosition(hid) 
+		bvec -= cpt 
+		bvec.Normalize() 
+		bvec *= scale 
+		bvec += cpt 
+		if FeatDirUtils._checkPlanarity(conf, cpt, nbrs): 
+			# only the hydrogen atom direction needs to be used 
+			return ((cpt, bvec), ), 'linear' 
+		else: 
+			# we have a non-planar configuration - we will assume sp3 and compute a second direction vector 
+			ovec = _findAvgVec(conf, cpt, nbrs) 
+			ovec *= (-1.0 * scale) 
+			ovec += cpt 
+			return ((cpt, bvec), (cpt, ovec), ), 'linear' 
+   
+	elif len(nbrs) >= 4: 
+		# in this case we should have two or more hydrogens we will simple use there directions 
+		res = [] 
+		for hid in hydrogens: 
+			bvec = conf.GetAtomPosition(hid) 
+			bvec -= cpt 
+			bvec.Normalize() 
+			bvec *= scale 
+			bvec += cpt 
+			res.append((cpt, bvec)) 
+		return tuple(res), 'linear' 
+
 
 
 class p4_element(object):
@@ -256,24 +332,27 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 
 	return mol, atom_map
 
-def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic'), mergeMetric=1, mergeTol=2.5, dirMergeMode=1, minRepeats=1):
+def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=2.5, dirMergeMode=1, minRepeats=1):
 	rdkit_mols = []
 	rdkit_maps = []
 	for mol in molecules:
 		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
+		rdkit_mol = Chem.AddHs(rdkit_mol)
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
-	fdef = AllChem.BuildFeatureFactory(os.path.join(RDConfig.RDDataDir,'BaseFeatures.fdef'))
+	fdef = AllChem.BuildFeatureFactory('/home/jose/Pharmacophore/Notebooks/BaseFeatures.fdef')
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
 		fparams = FeatMaps.FeatMapParams()
 		fmParams[k] = fparams
 
 	keep = families
-	rawFeats=[]
+	global_fmap = FeatMaps.FeatMap(params=fmParams)
 	for m in rdkit_mols:
+		rawFeats=[]
 		for f in fdef.GetFeaturesForMol(m):
+			
 			if f.GetFamily() == 'Acceptor':
 				aids = f.GetAtomIds() 
 				if len(aids) == 1: 
@@ -292,27 +371,31 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 					hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
 					if len(hvyNbrs) == 1: 
 						f.featDirs = FeatDirUtils.GetDonor1FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
-					elif len(hvyNbrs) == 2: 
-						f.featDirs = FeatDirUtils.GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
+					#elif len(hvyNbrs) == 2: 
+					#	f.featDirs = _GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
 					elif len(hvyNbrs) == 3: 
 						f.featDirs = FeatDirUtils.GetDonor3FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol))
 			elif f.GetFamily() == 'Aromatic':
 				f.featDirs = FeatDirUtils.GetAromaticFeatVects(m.GetConformer(-1), f.GetAtomIds(), f.GetPos(-1), scale=(0.6*mergeTol))
-	   
+			
 			rawFeats.append(f)
+		# filter that list down to only include the ones we're intereted in 
+		featList = [f for f in rawFeats if f.GetFamily() in keep]
 
-	# filter that list down to only include the ones we're intereted in 
-	featList = [f for f in rawFeats if f.GetFamily() in keep]
-
-	fmap = FeatMaps.FeatMap(feats = featList,weights=[1]*len(featList),params=fmParams)
-	matrix = FMU.GetFeatFeatDistMatrix(fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
+		fmap = FeatMaps.FeatMap(feats = featList,weights=[1]*len(featList),params=fmParams)
+		Merge = True
+		while Merge == True:
+			Merge = _MergeFeatPoints(fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
+		global_fmap = FMU.CombineFeatMaps(global_fmap, fmap, mergeMetric=0)	
+	
+	matrix = FMU.GetFeatFeatDistMatrix(global_fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
 	p4map = FeatMaps.FeatMap(params=fmParams)
 	for i, vector in enumerate(matrix):
-		feat_indexs = [vector.index(x) for x in vector if x<100000]
+		feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
 		feat_indexs.append(i)
-		if len(feat_indexs) >= minRepeats:
+		if (len(feat_indexs) >= minRepeats):
 			for feat_index in feat_indexs:
-				p4map.AddFeature(fmap._feats[feat_index], weight=1)
+				p4map.AddFeature(global_fmap._feats[feat_index], weight=1)
 	Merge = True
 	while Merge == True:
 		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
@@ -328,7 +411,7 @@ def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1):
 		p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
 		p4_elem.draw()
 		
-		if hasattr(feat, 'featDirs'):
+		if feat.featDirs:
 			ps, fType = feat.featDirs
 			for tail, head in ps:
 				p4_elem = p4_element(shape="arrow", origin=tail, end=head, color=_featColors[feat.GetFamily()])
