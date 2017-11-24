@@ -48,6 +48,51 @@ _featColors = {
 def feq(v1, v2, tol=1e-4): 
 	return abs(v1 - v2) < tol 
 
+def _ArbAxisRotation(theta, ax, pt): 
+	theta = math.pi * theta / 180 
+	c = math.cos(theta) 
+	s = math.sin(theta) 
+	t = 1 - c 
+	X = ax.x 
+	Y = ax.y 
+	Z = ax.z 
+	mat = [[t * X * X + c, t * X * Y + s * Z, t * X * Z - s * Y], 
+		   [t * X * Y - s * Z, t * Y * Y + c, t * Y * Z + s * X], 
+		   [t * X * Z + s * Y, t * Y * Z - s * X, t * Z * Z + c]] 
+	mat = np.array(mat) 
+	if isinstance(pt, Geometry.Point3D): 
+		pt = np.array((pt.x, pt.y, pt.z)) 
+		tmp = np.dot(mat, pt) 
+		res = Geometry.Point3D(tmp[0], tmp[1], tmp[2]) 
+	elif isinstance(pt, list) or isinstance(pt, tuple): 
+		pts = pt 
+		res = [] 
+		for pt in pts: 
+			pt = np.array((pt.x, pt.y, pt.z)) 
+			tmp = np.dot(mat, pt) 
+			res.append(Geometry.Point3D(tmp[0], tmp[1], tmp[2])) 
+	else: 
+		res = None 
+	return res 
+
+def _findAvgVec(conf, center, nbrs): 
+	# find the average of the normalized vectors going from the center atoms to the 
+	# neighbors 
+	# the average vector is also normalized 
+	avgVec = 0 
+	for nbr in nbrs: 
+		nid = nbr.GetIdx() 
+		pt = conf.GetAtomPosition(nid) 
+		pt -= center 
+		pt.Normalize() 
+		if (avgVec == 0): 
+			avgVec = pt 
+		else: 
+			avgVec += pt 
+   
+	avgVec.Normalize() 
+	return avgVec 
+
 def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5, 
 					  dirMergeMode=FMU.DirMergeMode.NoMerge, mergeMethod=FMU.MergeMethod.WeightedAverage, 
 					  compatFunc=FMU.familiesMatch): 
@@ -168,6 +213,78 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 		fm.DropFeature(fIdx - i) 
 	return res 
 
+def _GetAcceptor1FeatVects(conf, featAtoms, scale=1.5): 
+	""" 
+	Get the direction vectors for Acceptor of type 1 
+   
+	This is a acceptor with one heavy atom neighbor. There are two possibilities we will 
+	consider here 
+	1. The bond to the heavy atom is a single bond e.g. CO 
+	   In this case we don't know the exact direction and we just use the inversion of this bond direction 
+	   and mark this direction as a 'cone' 
+	2. The bond to the heavy atom is a double bond e.g. C=O 
+	   In this case the we have two possible direction except in some special cases e.g. SO2 
+	   where again we will use bond direction 
+		
+	ARGUMENTS: 
+	  featAtoms - list of atoms that are part of the feature 
+	  scale - length of the direction vector 
+	""" 
+	assert len(featAtoms) == 1 
+	aid = featAtoms[0] 
+	mol = conf.GetOwningMol() 
+	nbrs = mol.GetAtomWithIdx(aid).GetNeighbors() 
+   
+	cpt = conf.GetAtomPosition(aid) 
+   
+	# find the adjacent heavy atom 
+	heavyAt = -1 
+	for nbr in nbrs: 
+		if nbr.GetAtomicNum() != 1: 
+			heavyAt = nbr 
+			break 
+   
+	singleBnd = mol.GetBondBetweenAtoms(aid, heavyAt.GetIdx()).GetBondType() == Chem.BondType.SINGLE 
+   
+	# special scale - if the heavy atom is a sulfur (we should proabably check phosphorous as well) 
+	sulfur = heavyAt.GetAtomicNum() == 16 
+   
+	if singleBnd or sulfur: 
+		v1 = conf.GetAtomPosition(heavyAt.GetIdx()) 
+		v1 -= cpt 
+		v1.Normalize() 
+		v1 *= (-1.0 * scale) 
+		v1 += cpt 
+		return ((cpt, v1), ), 'cone' 
+	else: 
+		# ok in this case we will assume that 
+		# heavy atom is sp2 hybridized and the direction vectors (two of them) 
+		# are in the same plane, we will find this plane by looking for one 
+		# of the neighbors of the heavy atom 
+		hvNbrs = heavyAt.GetNeighbors() 
+		hvNbr = -1 
+		for nbr in hvNbrs: 
+			if nbr.GetIdx() != aid: 
+				hvNbr = nbr 
+				break 
+   
+		pt1 = conf.GetAtomPosition(hvNbr.GetIdx()) 
+		v1 = conf.GetAtomPosition(heavyAt.GetIdx()) 
+		pt1 -= v1 
+		v1 -= cpt 
+		rotAxis = v1.CrossProduct(pt1) 
+		rotAxis.Normalize() 
+		bv1 = _ArbAxisRotation(120, rotAxis, v1) 
+		bv1.Normalize() 
+		bv1 *= scale 
+		bv1 += cpt 
+		bv2 = _ArbAxisRotation(-120, rotAxis, v1) 
+		bv2.Normalize() 
+		bv2 *= scale 
+		bv2 += cpt 
+		return ((cpt, bv1), (cpt, bv2), ), 'linear' 
+
+
 def _GetDonor2FeatVects(conf, featAtoms, scale=1.5): 
 	""" 
 	Get the direction vectors for Donor of type 2 
@@ -192,21 +309,19 @@ def _GetDonor2FeatVects(conf, featAtoms, scale=1.5):
 	nbrs = list(mol.GetAtomWithIdx(aid).GetNeighbors()) 
 	assert len(nbrs) >= 2 
    
-	hydrogens = [] 
-	tmp = [] 
-	while len(nbrs): 
-		nbr = nbrs.pop() 
-		if nbr.GetAtomicNum() == 1: 
+	hydrogens = []
+	heavy=[] 
+	for nbr in nbrs: 
+		if nbr.GetAtomicNum() == 1:
 			hydrogens.append(nbr) 
-	#	else: 
-	#		tmp.append(nbr) 
-	#nbrs = tmp 
+		else:
+			heavy.append(nbr)
    
 	if len(nbrs) == 2: 
 		# there should be no hydrogens in this case 
 		assert len(hydrogens) == 0 
 		# in this case the direction is the opposite of the average vector of the two neighbors 
-		bvec = _findAvgVec(conf, cpt, nbrs) 
+		bvec = _findAvgVec(conf, cpt, heavy) 
 		bvec *= (-1.0 * scale) 
 		bvec += cpt 
 		return ((cpt, bvec), ), 'linear' 
@@ -222,16 +337,16 @@ def _GetDonor2FeatVects(conf, featAtoms, scale=1.5):
 		bvec.Normalize() 
 		bvec *= scale 
 		bvec += cpt 
+		return ((cpt, bvec), ), 'linear'
 		if FeatDirUtils._checkPlanarity(conf, cpt, nbrs): 
 			# only the hydrogen atom direction needs to be used 
 			return ((cpt, bvec), ), 'linear' 
 		else: 
 			# we have a non-planar configuration - we will assume sp3 and compute a second direction vector 
-			ovec = _findAvgVec(conf, cpt, nbrs) 
+			ovec = _findAvgVec(conf, cpt, heavy) 
 			ovec *= (-1.0 * scale) 
 			ovec += cpt 
 			return ((cpt, bvec), (cpt, ovec), ), 'linear' 
-   
 	elif len(nbrs) >= 4: 
 		# in this case we should have two or more hydrogens we will simple use there directions 
 		res = [] 
@@ -244,11 +359,9 @@ def _GetDonor2FeatVects(conf, featAtoms, scale=1.5):
 			res.append((cpt, bvec)) 
 		return tuple(res), 'linear' 
 
-
-
 class p4_element(object):
 
-	SUPPORTED_SHAPES = set('sphere arrow'.split())
+	SUPPORTED_SHAPES = set('sphere arrow cone'.split())
 
 	def __init__(self, shape, origin, color,
 				 name='p4', parent_id=100, end=None, size=None):
@@ -289,6 +402,16 @@ class p4_element(object):
 		.color {}
 		.arrow {} {} {} {} {} {} {} {} {}
 		""".format(self.color, x1, y1, z1, x2, y2, z2, 0.05, 0.1, 0.8)
+		return self._build_vrml(bild)
+
+	def _draw_cone(self):
+		x1, y1, z1 = self.origin
+		x2, y2, z2 = self.end
+		bild = """
+		.color {}
+		.transparency {}
+		.cone {} {} {} {} {} {} {} {}
+		""".format(self.color, 0.5, x1, y1, z1, x2, y2, z2, self.size, 'open')
 		return self._build_vrml(bild)
 
 	def _build_vrml(self, bild, name=None):
@@ -332,7 +455,7 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 
 	return mol, atom_map
 
-def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=2.5, dirMergeMode=1, minRepeats=1):
+def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=2.5, dirMergeMode=1, minRepeats=1, showVectors=True):
 	rdkit_mols = []
 	rdkit_maps = []
 	for mol in molecules:
@@ -341,7 +464,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
-	fdef = AllChem.BuildFeatureFactory('/home/jose/Pharmacophore/Notebooks/BaseFeatures.fdef')
+	fdef = AllChem.BuildFeatureFactory('/home/jsanchez/.local/chimera_p4/chimera_p4/BaseFeatures.fdef')
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
 		fparams = FeatMaps.FeatMapParams()
@@ -352,32 +475,31 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	for m in rdkit_mols:
 		rawFeats=[]
 		for f in fdef.GetFeaturesForMol(m):
-			
-			if f.GetFamily() == 'Acceptor':
-				aids = f.GetAtomIds() 
-				if len(aids) == 1: 
-					featAtom = m.GetAtomWithIdx(aids[0]) 
-					hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
-					if len(hvyNbrs) == 1: 
-						f.featDirs = FeatDirUtils.GetAcceptor1FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
-					elif len(hvyNbrs) == 2: 
-						f.featDirs = FeatDirUtils.GetAcceptor2FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
-					elif len(hvyNbrs) == 3: 
-						f.featDirs = FeatDirUtils.GetAcceptor3FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
-			elif f.GetFamily() == 'Donor':
-				aids = f.GetAtomIds() 
-				if len(aids) == 1: 
-					featAtom = m.GetAtomWithIdx(aids[0]) 
-					hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
-					if len(hvyNbrs) == 1: 
-						f.featDirs = FeatDirUtils.GetDonor1FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
-					#elif len(hvyNbrs) == 2: 
-					#	f.featDirs = _GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol)) 
-					elif len(hvyNbrs) == 3: 
-						f.featDirs = FeatDirUtils.GetDonor3FeatVects(m.GetConformer(-1), aids, scale=(0.6*mergeTol))
-			elif f.GetFamily() == 'Aromatic':
-				f.featDirs = FeatDirUtils.GetAromaticFeatVects(m.GetConformer(-1), f.GetAtomIds(), f.GetPos(-1), scale=(0.6*mergeTol))
-			
+			if showVectors:
+				if f.GetFamily() == 'Acceptor':
+					aids = f.GetAtomIds() 
+					if len(aids) == 1: 
+						featAtom = m.GetAtomWithIdx(aids[0]) 
+						hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
+						if len(hvyNbrs) == 1: 
+							f.featDirs = _GetAcceptor1FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+						elif len(hvyNbrs) == 2: 
+							f.featDirs = FeatDirUtils.GetAcceptor2FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+						elif len(hvyNbrs) == 3: 
+							f.featDirs = FeatDirUtils.GetAcceptor3FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+				elif f.GetFamily() == 'Donor':
+					aids = f.GetAtomIds() 
+					if len(aids) == 1: 
+						featAtom = m.GetAtomWithIdx(aids[0]) 
+						hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
+						if len(hvyNbrs) == 1: 
+							f.featDirs = FeatDirUtils.GetDonor1FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+						elif len(hvyNbrs) == 2: 
+							f.featDirs = _GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+						elif len(hvyNbrs) == 3: 
+							f.featDirs = FeatDirUtils.GetDonor3FeatVects(m.GetConformer(-1), aids, scale=(mergeTol))
+				elif f.GetFamily() == 'Aromatic':
+					f.featDirs = FeatDirUtils.GetAromaticFeatVects(m.GetConformer(-1), f.GetAtomIds(), f.GetPos(-1), scale=(mergeTol))				
 			rawFeats.append(f)
 		# filter that list down to only include the ones we're intereted in 
 		featList = [f for f in rawFeats if f.GetFamily() in keep]
@@ -401,22 +523,23 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
 	return p4map
 
-def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1):
+def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1, showVectors=True):
 	molecules = molecules_sel.molecules()
 
-	p4map = calc_p4map(molecules, mergeTol=mergeTol, minRepeats=minRepeats)
+	p4map = calc_p4map(molecules, mergeTol=mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 
 	for feat in p4map._feats:
-		size_sphere = mergeTol/4
-		p4_elem = p4_element(shape="sphere", size=size_sphere, origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
+		p4_elem = p4_element(shape="sphere", size=(mergeTol/2), origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
 		p4_elem.draw()
 		
 		if feat.featDirs:
-			ps, fType = feat.featDirs
+			ps, fType = feat.featDirs			
 			for tail, head in ps:
-				p4_elem = p4_element(shape="arrow", origin=tail, end=head, color=_featColors[feat.GetFamily()])
+				if fType == 'linear':
+					p4_elem = p4_element(shape="arrow", origin=tail, end=head, color=_featColors[feat.GetFamily()])
+				elif fType =='cone':
+					p4_elem = p4_element(shape="cone", origin=head, end=tail, color=_featColors[feat.GetFamily()], size=(mergeTol/2))
 				p4_elem.draw() 
-
 	msg = "Chimera pharmacophore done"
 	chimera.statusline.show_message(msg)
 	

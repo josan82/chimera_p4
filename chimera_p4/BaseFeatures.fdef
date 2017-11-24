@@ -184,25 +184,25 @@ EndFeature
 # "r" in SMARTS parser
 #
 AtomType Hphobe6 [{Hphobe};r6,!R1&r5,!R1&r4,!R1&r3]
-DefineFeature RH6_6 [{Hphobe6}]1~[{Hphobe6}]~[{Hphobe6}]~[{Hphobe6}]~[{Hphobe6}]~[{Hphobe6}]~1
+DefineFeature RH6_6 [{Hphobe6}]1@[{Hphobe6}]@[{Hphobe6}]@[{Hphobe6}]@[{Hphobe6}]@[{Hphobe6}]@1
   Family LumpedHydrophobe
   Weights 1.0,1.0,1.0,1.0,1.0,1.0
 EndFeature
 
 AtomType Hphobe5 [{Hphobe};r5,!R1&r4,!R1&r3]
-DefineFeature RH5_5 [{Hphobe5}]1~[{Hphobe5}]~[{Hphobe5}]~[{Hphobe5}]~[{Hphobe5}]~1
+DefineFeature RH5_5 [{Hphobe5}]1@[{Hphobe5}]@[{Hphobe5}]@[{Hphobe5}]@[{Hphobe5}]@1
   Family LumpedHydrophobe
   Weights 1.0,1.0,1.0,1.0,1.0
 EndFeature
 
 AtomType Hphobe4 [{Hphobe};r4,!R1&r3]
-DefineFeature RH4_4 [{Hphobe4}]1~[{Hphobe4}]~[{Hphobe4}]~[{Hphobe4}]~1
+DefineFeature RH4_4 [{Hphobe4}]1@[{Hphobe4}]@[{Hphobe4}]@[{Hphobe4}]@1
   Family LumpedHydrophobe
   Weights 1.0,1.0,1.0,1.0
 EndFeature
 
 AtomType Hphobe3 [{Hphobe};r3]
-DefineFeature RH3_3 [{Hphobe3}]1~[{Hphobe3}]~[{Hphobe3}]~1
+DefineFeature RH3_3 [{Hphobe3}]1@[{Hphobe3}]@[{Hphobe3}]@1
   Family LumpedHydrophobe
   Weights 1.0,1.0,1.0
 EndFeature
