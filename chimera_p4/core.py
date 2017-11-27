@@ -15,6 +15,7 @@ import numpy as np
 import math
 
 from rdkit import Chem, RDConfig, Geometry
+from rdkit.Geometry.rdGeometry import Point3D
 from rdkit.Chem import SanitizeMol
 from rdkit.Chem import AllChem
 from rdkit.Chem.FeatMaps import FeatMaps
@@ -189,22 +190,27 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 					ps1, fType1 = featI.featDirs
 					ps2, fType2 = nbrFeat.featDirs
 					if fType1 == fType2:
-						sumVec = 0
+						sumVec1 = 0
 						for i, pt in enumerate(ps1):
-							if (sumVec ==0):
-								sumVec = pt
+							if (sumVec1 == 0):
+								sumVec1 = pt[1] - pt[0]
 							else:
-								sumVec = (sumVec[0] + pt[0], sumVec[1] + pt[1])
-						sumVec = (sumVec[0]/(i+1), sumVec[1]/(i+1))
-						"""
+								sumVec1 += pt[1] - pt[0]
+						sumVec1 = (sumVec1/(i+1))
+						sumVec2 = 0
 						for i, pt in enumerate(ps2):
-							if (sumVec ==0):
-								sumVec = pt
+							if (sumVec2 == 0):
+								sumVec2 = pt[1] - pt[0]
 							else:
-								sumVec = (sumVec[0] + pt[0], sumVec[1] + pt[1])
-						sumVec = (sumVec[0]/(i+1), sumVec[1])
-						"""
-						featI.featDirs = (sumVec, ), fType1
+								sumVec2 += pt[1] - pt[0]
+						sumVec2 = (sumVec2/(i+1))
+						
+						sumVec = (sumVec1+sumVec2)/2
+						sumVec = Point3D(sumVec[0], sumVec[1], sumVec[2])
+						sumVec.Normalize() 
+						sumVec *= 1.5
+						sumVec += newPos
+						featI.featDirs = ((newPos, sumVec), ), fType1
 					else:
 						del featI.featDirs
 				else:
@@ -486,7 +492,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
-	fdef = AllChem.BuildFeatureFactory('/home/jsanchez/.local/chimera_p4/chimera_p4/BaseFeatures.fdef')
+	fdef = AllChem.BuildFeatureFactory('/home/jose/miniconda3/envs/pychimera/lib/python2.7/site-packages/chimera_p4/BaseFeatures.fdef')
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
 		fparams = FeatMaps.FeatMapParams()
