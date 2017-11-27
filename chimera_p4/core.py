@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import chimera
+
 try:
 	from cStringIO import StringIO
 except ImportError:
@@ -182,15 +183,36 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
    
 			featI.SetPos(newPos) 
 			featI.weight = newWeight 
-			"""
+			
 			if dirMergeMode == FMU.DirMergeMode.Sum:
-				if hasattr(featI, 'featDirs') and hasattr(nbrfeat, 'featDirs'):
-					sumDirs = featI.featDirs + nbrfeat.featDirs
-					ps, fType = sumDirs
-					for tail, head in ps:
-						tails
-						featI.featDirs = numpy
-			"""
+				if featI.featDirs and nbrFeat.featDirs:
+					ps1, fType1 = featI.featDirs
+					ps2, fType2 = nbrFeat.featDirs
+					if fType1 == fType2:
+						sumVec = 0
+						for i, pt in enumerate(ps1):
+							if (sumVec ==0):
+								sumVec = pt
+							else:
+								sumVec = (sumVec[0] + pt[0], sumVec[1] + pt[1])
+						sumVec = (sumVec[0]/(i+1), sumVec[1]/(i+1))
+						"""
+						for i, pt in enumerate(ps2):
+							if (sumVec ==0):
+								sumVec = pt
+							else:
+								sumVec = (sumVec[0] + pt[0], sumVec[1] + pt[1])
+						sumVec = (sumVec[0]/(i+1), sumVec[1])
+						"""
+						featI.featDirs = (sumVec, ), fType1
+					else:
+						del featI.featDirs
+				else:
+					try:
+						del featI.featDirs
+					except:
+						pass
+			
 			# nbr and fi are no longer valid targets: 
 			# print 'nbr done:',nbr,featsToRemove,featsInPlay 
 			featsToRemove.append(nbr) 
@@ -460,7 +482,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rdkit_maps = []
 	for mol in molecules:
 		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
-		rdkit_mol = Chem.AddHs(rdkit_mol)
+		rdkit_mol = Chem.AddHs(rdkit_mol, addCoords=True)
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
@@ -539,7 +561,8 @@ def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1, showVectors=True):
 					p4_elem = p4_element(shape="arrow", origin=tail, end=head, color=_featColors[feat.GetFamily()])
 				elif fType =='cone':
 					p4_elem = p4_element(shape="cone", origin=head, end=tail, color=_featColors[feat.GetFamily()], size=(mergeTol/2))
-				p4_elem.draw() 
+				p4_elem.draw()
+		
 	msg = "Chimera pharmacophore done"
 	chimera.statusline.show_message(msg)
 	
