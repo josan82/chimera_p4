@@ -22,6 +22,8 @@ from rdkit.Chem.FeatMaps import FeatMaps
 from rdkit.Chem.FeatMaps import FeatMapUtils as FMU
 from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
 
+FEATURES_FILE = os.path.join(os.path.dirname(__file__), 'BaseFeatures.fdef')
+
 # The RDKit_BondType dictionary is defined to convert float bond orders into RDKit bond types
 RDKit_BondType = {
 	1.0 : Chem.BondType.SINGLE,
@@ -35,23 +37,6 @@ RDKit_BondType = {
 	3.5 : Chem.BondType.THREEANDAHALF,
 	4.5 : Chem.BondType.FOURANDAHALF,
 	5.5 : Chem.BondType.FIVEANDAHALF
-}
-
-# Formal charges from IDATM atom type
-FC_from_IDATM = {
-	"C1-" : -1,
-	"N3+" : 1,
-	"N2+" : 1,
-	"Ng+" : 1,
-	"Ntr" : 1,
-	"N1+" : 1,
-	"Oar+" : 1,
-	"O3-" : -1,
-	"O2-" : -1,
-	"O1+" : 1,
-	"S3+" : 1,
-	"S3-" :-1,
-	"P3+" : 1
 }
 
 _featColors = { 
@@ -475,7 +460,30 @@ class p4_element(object):
 			self._subid += 1
 		return vrml
 
-#Function from plume with sanitization and bond order=1
+#Function to fix Nitro groups from chimera molecules without explicit formal charges
+def _fix_nitro(molecule):
+	for atom in molecule.GetAtoms():
+		valence = 0.0
+		for bond in atom.GetBonds():
+			valence += bond.GetBondTypeAsDouble()
+
+		if atom.GetAtomicNum() == 7:
+			if atom.GetFormalCharge():
+				continue
+			aromHolder = atom.GetIsAromatic()
+			atom.SetIsAromatic(0)
+			if valence == 4:
+				for neighbor in atom.GetNeighbors():
+					print (neighbor.GetAtomicNum())
+					print(molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx()).GetBondType())
+					if (neighbor.GetAtomicNum() == 8) and (molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx()).GetBondType() == Chem.BondType.SINGLE):
+						print('entra')
+						atom.SetFormalCharge(1)
+						neighbor.SetFormalCharge(-1)
+						break
+				atom.SetIsAromatic(aromHolder)
+
+#Function to convert from Chimera to RDKit
 def _chimera_to_rdkit(molecule, sanitize=True):
 	from rdkit.Chem import Mol, RWMol, Atom, Conformer
 	mol = Mol()
@@ -483,15 +491,10 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 	emol.AddConformer(Conformer())
 	atom_map = {}
 	
-	msg=""
 	for atom in molecule.atoms:
-		
-		msg = msg + str(FC_from_IDATM[atom.idatmType])
 		a = Atom(atom.element.number)
-		a.SetFormalCharge(FC_from_IDATM[atom.idatmType])
 		atom_map[atom] = i = emol.AddAtom(a)
 		emol.GetConformer().SetAtomPosition(i, atom.coord().data())
-	chimera.statusline.show_message(msg)
 	for bond in molecule.bonds:
 		a1, a2 = bond.atoms
 		if hasattr(bond, 'order'):
@@ -501,7 +504,8 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 		emol.AddBond(atom_map[a1], atom_map[a2], bond_order)
 		
 	mol = Mol(emol)
-	
+	_fix_nitro(mol)
+
 	if sanitize:
 		SanitizeMol(mol)
 
@@ -517,7 +521,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
-	fdef = AllChem.BuildFeatureFactory('/home/jsanchez/.local/chimera_p4/chimera_p4/BaseFeatures.fdef')
+	fdef = AllChem.BuildFeatureFactory(FEATURES_FILE)
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
 		fparams = FeatMaps.FeatMapParams()
