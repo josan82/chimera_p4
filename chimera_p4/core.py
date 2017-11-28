@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import chimera
+from AddCharge import estimateFormalCharge
 
 try:
 	from cStringIO import StringIO
@@ -16,8 +17,7 @@ import math
 
 from rdkit import Chem, RDConfig, Geometry
 from rdkit.Geometry.rdGeometry import Point3D
-from rdkit.Chem import SanitizeMol
-from rdkit.Chem import AllChem
+from rdkit.Chem import SanitizeMol, AllChem, rdmolops
 from rdkit.Chem.FeatMaps import FeatMaps
 from rdkit.Chem.FeatMaps import FeatMapUtils as FMU
 from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
@@ -35,6 +35,23 @@ RDKit_BondType = {
 	3.5 : Chem.BondType.THREEANDAHALF,
 	4.5 : Chem.BondType.FOURANDAHALF,
 	5.5 : Chem.BondType.FIVEANDAHALF
+}
+
+# Formal charges from IDATM atom type
+FC_from_IDATM = {
+	"C1-" : -1,
+	"N3+" : 1,
+	"N2+" : 1,
+	"Ng+" : 1,
+	"Ntr" : 1,
+	"N1+" : 1,
+	"Oar+" : 1,
+	"O3-" : -1,
+	"O2-" : -1,
+	"O1+" : 1,
+	"S3+" : 1,
+	"S3-" :-1,
+	"P3+" : 1
 }
 
 _featColors = { 
@@ -208,7 +225,10 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 						sumVec = (sumVec1+sumVec2)/2
 						sumVec = Point3D(sumVec[0], sumVec[1], sumVec[2])
 						sumVec.Normalize() 
-						sumVec *= 1.5
+						if fType1 == 'linear':
+							sumVec *= 1.5
+						elif fType1 == 'cone':
+							sumVec *= 0.5
 						sumVec += newPos
 						featI.featDirs = ((newPos, sumVec), ), fType1
 					else:
@@ -463,11 +483,15 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 	emol.AddConformer(Conformer())
 	atom_map = {}
 	
+	msg=""
 	for atom in molecule.atoms:
+		
+		msg = msg + str(FC_from_IDATM[atom.idatmType])
 		a = Atom(atom.element.number)
+		a.SetFormalCharge(FC_from_IDATM[atom.idatmType])
 		atom_map[atom] = i = emol.AddAtom(a)
 		emol.GetConformer().SetAtomPosition(i, atom.coord().data())
-	
+	chimera.statusline.show_message(msg)
 	for bond in molecule.bonds:
 		a1, a2 = bond.atoms
 		if hasattr(bond, 'order'):
@@ -488,11 +512,12 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rdkit_maps = []
 	for mol in molecules:
 		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
+		rdmolops.Cleanup(rdkit_mol)
 		rdkit_mol = Chem.AddHs(rdkit_mol, addCoords=True)
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
-	fdef = AllChem.BuildFeatureFactory('/home/jose/miniconda3/envs/pychimera/lib/python2.7/site-packages/chimera_p4/BaseFeatures.fdef')
+	fdef = AllChem.BuildFeatureFactory('/home/jsanchez/.local/chimera_p4/chimera_p4/BaseFeatures.fdef')
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
 		fparams = FeatMaps.FeatMapParams()
@@ -506,6 +531,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 			if showVectors:
 				if f.GetFamily() == 'Acceptor':
 					aids = f.GetAtomIds() 
+					"""
 					if len(aids) == 1: 
 						featAtom = m.GetAtomWithIdx(aids[0]) 
 						hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
@@ -514,14 +540,15 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 						elif len(hvyNbrs) == 2: 
 							f.featDirs = FeatDirUtils.GetAcceptor2FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
 						elif len(hvyNbrs) == 3: 
-							f.featDirs = FeatDirUtils.GetAcceptor3FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+							f.featDirs = FeatDirUtils.GetAcceptor3FeatVects(m.GetConformer(-1), aids, scale=(mergeTol))
+					"""	 
 				elif f.GetFamily() == 'Donor':
 					aids = f.GetAtomIds() 
 					if len(aids) == 1: 
 						featAtom = m.GetAtomWithIdx(aids[0]) 
 						hvyNbrs = [x for x in featAtom.GetNeighbors() if x.GetAtomicNum() != 1] 
 						if len(hvyNbrs) == 1: 
-							f.featDirs = FeatDirUtils.GetDonor1FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
+							f.featDirs = FeatDirUtils.GetDonor1FeatVects(m.GetConformer(-1), aids, scale=(0.5)) 
 						elif len(hvyNbrs) == 2: 
 							f.featDirs = _GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
 						elif len(hvyNbrs) == 3: 
@@ -541,7 +568,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	matrix = FMU.GetFeatFeatDistMatrix(global_fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
 	p4map = FeatMaps.FeatMap(params=fmParams)
 	for i, vector in enumerate(matrix):
-		feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
+		feat_indexs = [vector.index(x) for x in vector if x<=mergeTol]
 		feat_indexs.append(i)
 		if (len(feat_indexs) >= minRepeats):
 			for feat_index in feat_indexs:
@@ -557,8 +584,9 @@ def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1, showVectors=True):
 	p4map = calc_p4map(molecules, mergeTol=mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 
 	for feat in p4map._feats:
-		p4_elem = p4_element(shape="sphere", size=(mergeTol/2), origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
-		p4_elem.draw()
+		if feat.GetFamily() != 'Donor':
+			p4_elem = p4_element(shape="sphere", size=(mergeTol/2), origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
+			p4_elem.draw()
 		
 		if feat.featDirs:
 			ps, fType = feat.featDirs			
@@ -566,7 +594,7 @@ def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1, showVectors=True):
 				if fType == 'linear':
 					p4_elem = p4_element(shape="arrow", origin=tail, end=head, color=_featColors[feat.GetFamily()])
 				elif fType =='cone':
-					p4_elem = p4_element(shape="cone", origin=head, end=tail, color=_featColors[feat.GetFamily()], size=(mergeTol/2))
+					p4_elem = p4_element(shape="cone", origin=head, end=tail, color=_featColors[feat.GetFamily()], size=(1.33))
 				p4_elem.draw()
 		
 	msg = "Chimera pharmacophore done"
