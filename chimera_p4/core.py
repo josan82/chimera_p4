@@ -3,6 +3,8 @@
 
 import chimera
 from AddCharge import estimateFormalCharge
+from SplitMolecule.split import molecule_from_atoms
+from Matrix import chimera_xform
 
 try:
 	from cStringIO import StringIO
@@ -17,10 +19,12 @@ import math
 
 from rdkit import Chem, RDConfig, Geometry
 from rdkit.Geometry.rdGeometry import Point3D
-from rdkit.Chem import SanitizeMol, AllChem, rdmolops
+from rdkit.Chem import SanitizeMol, AllChem, rdmolops, MolFromPDBBlock, FastFindRings
+from rdkit.Chem.rdMolAlign import GetAlignmentTransform, GetO3A, AlignMol, GetO3AForProbeConfs
 from rdkit.Chem.FeatMaps import FeatMaps
 from rdkit.Chem.FeatMaps import FeatMapUtils as FMU
 from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
+from rdkit.Chem.AllChem import EmbedMolecule, ETKDG, MMFFOptimizeMolecule, MMFFGetMoleculeProperties, EmbedMultipleConfs, AddHs, RemoveHs
 
 FEATURES_FILE = os.path.join(os.path.dirname(__file__), 'BaseFeatures.fdef')
 
@@ -48,7 +52,31 @@ _featColors = {
 	'Aromatic': '1 .8 .2', 
 	'LumpedHydrophobe': '.5 .25 0', 
 	'Hydrophobe': '.5 .25 0', 
-} 
+}
+
+#Find if there is a method in chimera to do this (new function)
+def _find_by_sn(molecule, serialN):
+	for atom in molecule.atoms:
+		if(atom.serialNumber == serialN):
+			return atom
+
+#New function
+def sulfurOxygen(atom):
+	if atom.idatmType != "O3-":
+		return False
+	try:
+		s = atom.bondsMap.keys()[0]
+	except IndexError:
+		return False
+	if s.idatmType in ['Son', 'Sxd']:
+		return True
+	if s.idatmType == 'Sac':
+		o3s = [a for a in s.neighbors if a.idatmType == 'O3-']
+		o3s.sort()
+		return o3s.index(atom) > 1
+	return False
+
+
 def feq(v1, v2, tol=1e-4): 
 	return abs(v1 - v2) < tol 
 
@@ -606,6 +634,100 @@ def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1, showVectors=True):
 	
 	return True
 
+#### Open3Align code
+def _apply_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
+	from chimera import Coord, Point
+
+	for rdkit_atom in rdkit_mol.GetAtoms():
+		chimera_atom = list(atom_map.keys())[list(atom_map.values()).index(rdkit_atom.GetIdx())]
+		#chimera_atom = _find_by_sn(chimera_mol, rdkit_atom.GetIdx())
+
+		atom_position = Point()
+		atom_position[0] = list(rdkit_mol.GetConformer(id=rdkit_confId).GetAtomPosition(rdkit_atom.GetIdx()))[0]
+		atom_position[1] = list(rdkit_mol.GetConformer(id=rdkit_confId).GetAtomPosition(rdkit_atom.GetIdx()))[1]
+		atom_position[2] = list(rdkit_mol.GetConformer(id=rdkit_confId).GetAtomPosition(rdkit_atom.GetIdx()))[2]
+
+		chimera_atom.setCoord(Coord(atom_position))
+		
+	chimera_mol.computeIdatmTypes()
+
+#Function from plume
+def _transform_molecule(molecule, xform):
+	new_xform = molecule.openState.xform
+	new_xform.premultiply(xform)
+	molecule.openState.xform = new_xform
+
+
+#Function from plume with small changes in sanitization
+def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **kwargs):
+	rdk_reference, ref_map = _chimera_to_rdkit(reference)
+	rdk_probe, probe_map = _chimera_to_rdkit(probe)
+	FastFindRings(rdk_reference)
+	FastFindRings(rdk_probe)
+	reference_params = MMFFGetMoleculeProperties(rdk_reference)
+	probe_params = MMFFGetMoleculeProperties(rdk_probe)
+	
+	if nConformers > 0:
+		rdk_probe = AddHs(rdk_probe, addCoords=True)
+		cids = EmbedMultipleConfs(rdk_probe, nConformers, useExpTorsionAnglePrefs=True, useBasicKnowledge=True)
+		rdk_probe = RemoveHs(rdk_probe)
+		rdk_reference = RemoveHs(rdk_reference)
+
+		o3as = GetO3AForProbeConfs(rdk_probe, rdk_reference, numThreads=0)
+	
+		highest_conf_score = 0.0
+		conf_id = 0
+		for o3a in o3as:
+			score_conf = o3a.Score()
+			if score_conf > highest_conf_score:
+				highest_conf_score = score_conf
+				o3a_result = o3a
+				highest_conf_id = conf_id
+			conf_id += 1
+	else:
+		rdk_probe = RemoveHs(rdk_probe)
+		rdk_reference = RemoveHs(rdk_reference)
+		o3a_result = GetO3A(rdk_probe, rdk_reference, probe_params, reference_params)
+		highest_conf_id = 0
+	
+	#rmsd, xform = o3a_result.Trans()
+	if transform:
+		o3a_result.Align()
+		_apply_atom_positions(rdk_probe, probe, probe_map, rdkit_confId=highest_conf_id)
+		#_transform_molecule(probe, chimera_xform(xform[:3]))
+	
+	return o3a_result   #return the alignment
+
+#New function
+def open3align(molecules_sel, transform=True, nConformers=0):
+	molecules = molecules_sel.molecules()
+
+	if not len(molecules) > 1:
+		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
+	
+	#Calculating the best scored alignment
+	max_score = 0.0
+	for reference in molecules:
+
+		align_score = 0.0
+		for probe in molecules:
+			if(molecules.index(probe) is not molecules.index(reference)):
+				o3a = align_o3a(reference, probe, transform=False, nConformers=nConformers)
+				align_score += o3a.Score()
+		
+		if align_score > max_score:
+			max_score = align_score
+			if transform:
+				for probe in molecules:
+					if(molecules.index(probe) is not molecules.index(reference)):
+						o3a = align_o3a(reference, probe, transform=True, nConformers=nConformers)
+
+	msg = "The score of the best alignment is {}".format(max_score)
+	chimera.statusline.show_message(msg)
+	
+	return max_score
+
+### GUI Code
 class Controller(object):
 
 	"""
