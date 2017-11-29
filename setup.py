@@ -29,7 +29,7 @@ setup(
     long_description=long_description,
     packages=find_packages(),
     package_data={
-        'chimera_p4.chimera_p4': ['*.fdef'],
+        'chimera_p4': ['*.fdef'],
          },
     include_package_data=True,
     platforms='any',
