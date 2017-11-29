@@ -142,7 +142,7 @@ source activate "$ENV_NAME"
 ENV_PATH="$(conda info --root)/envs/$ENV_NAME"
 echo -e "Activated environment $ENV_NAME" | tee -a install.log
 
-conda install git >> install.log 2>&1
+conda install -y git >> install.log 2>&1
 
 
 # Install all packages with pip
