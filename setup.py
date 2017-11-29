@@ -28,7 +28,7 @@ setup(
     description=long_description,
     long_description=long_description,
     packages=find_packages(),
-    data_files=[('', ['BaseFeatures.fdef'])]
+    data_files=[('', ['BaseFeatures.fdef'])],
     include_package_data=True,
     platforms='any',
     classifiers=[
