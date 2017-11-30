@@ -14,7 +14,7 @@ import os
 import math
 
 from rdkit import Chem
-from rdkit.Chem import rdmolops, FastFindRings
+from rdkit.Chem import FastFindRings
 from rdkit.Chem.rdMolAlign import GetO3A, AlignMol, GetO3AForProbeConfs
 from rdkit.Chem.FeatMaps import FeatMaps, FeatMapUtils as FMU
 from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
@@ -109,7 +109,6 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rdkit_maps = []
 	for mol in molecules:
 		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
-		rdmolops.Cleanup(rdkit_mol)
 		rdkit_mol = Chem.AddHs(rdkit_mol, addCoords=True)
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
@@ -277,7 +276,6 @@ class Controller(object):
 	"""
 	def __init__(self, *args, **kwargs):
 		return
-
 
 class Model(object):
 
