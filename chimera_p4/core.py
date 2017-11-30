@@ -200,6 +200,8 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 
 #Function from plume with small changes in sanitization
 def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **kwargs):
+	reference.deleteAtom(Element("H")
+	probe.deleteAtom(Element("H")
 	rdk_reference, ref_map = _chimera_to_rdkit(reference)
 	rdk_probe, probe_map = _chimera_to_rdkit(probe)
 	FastFindRings(rdk_reference)
@@ -211,7 +213,6 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 		rdk_probe = AddHs(rdk_probe, addCoords=True)
 		cids = EmbedMultipleConfs(rdk_probe, nConformers, useExpTorsionAnglePrefs=True, useBasicKnowledge=True)
 		rdk_probe = RemoveHs(rdk_probe)
-		rdk_reference = RemoveHs(rdk_reference)
 
 		o3as = GetO3AForProbeConfs(rdk_probe, rdk_reference, numThreads=0)
 	
@@ -225,8 +226,6 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 				highest_conf_id = conf_id
 			conf_id += 1
 	else:
-		rdk_probe = RemoveHs(rdk_probe)
-		rdk_reference = RemoveHs(rdk_reference)
 		o3a_result = GetO3A(rdk_probe, rdk_reference, probe_params, reference_params)
 		highest_conf_id = 0
 	
