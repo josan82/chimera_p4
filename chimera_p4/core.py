@@ -200,8 +200,8 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 
 #Function from plume with small changes in sanitization
 def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **kwargs):
-	reference.deleteAtom(Element("H")
-	probe.deleteAtom(Element("H")
+	reference.deleteAtom(Element("H"))
+	probe.deleteAtom(Element("H"))
 	rdk_reference, ref_map = _chimera_to_rdkit(reference)
 	rdk_probe, probe_map = _chimera_to_rdkit(probe)
 	FastFindRings(rdk_reference)
