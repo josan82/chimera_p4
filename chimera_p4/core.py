@@ -175,7 +175,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	return p4map
 
 def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
-	chimera.openModels.close(chimera.openModels.list(id=100))
+	chimera.openModels.remove(chimera.openModels.list(id=100))
 	
 	molecules = molecules_sel.molecules()
 
