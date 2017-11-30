@@ -104,7 +104,7 @@ class p4_element(object):
 			self._subid += 1
 		return vrml
 
-def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=2.5, dirMergeMode=1, minRepeats=1, showVectors=True):
+def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=1.5, dirMergeMode=1, minRepeats=1, showVectors=True):
 	rdkit_mols = []
 	rdkit_maps = []
 	for mol in molecules:
@@ -174,7 +174,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
 	return p4map
 
-def chimera_p4(molecules_sel, mergeTol=2.5, minRepeats=1, showVectors=True):
+def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 	molecules = molecules_sel.molecules()
 
 	p4map = calc_p4map(molecules, mergeTol=mergeTol, minRepeats=minRepeats, showVectors=showVectors)
