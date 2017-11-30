@@ -23,12 +23,5 @@ dependencies:
   - setuptools=27.2.0
   - sqlite=3.13.0
   - tk=8.5.18
-  - nciplot
-  - ambermini
   - rdkit=2016
-  - openmoltools
-  - parmed
-  - openmm
-  - mdtraj
-  - pdbfixer
-  - ruamel_yaml
+  - git

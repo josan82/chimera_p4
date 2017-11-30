@@ -54,11 +54,6 @@ if ! [ -x "$(command -v conda)" ]; then
   wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda*.sh >> install.log 2>&1
 fi
 
-if ! [ -x "$(command -v chimera)" ]; then
-  echo 'Error: UCSF Chimera is not installed or in PATH. Visit https://www.cgl.ucsf.edu/chimera.' >&2
-  exit 1
-fi
-
 # Actual installation begins
 
 echo "Chimera Pharmacophore installation started on $(date)" > install.log
@@ -142,9 +137,6 @@ source activate "$ENV_NAME"
 ENV_PATH="$(conda info --root)/envs/$ENV_NAME"
 echo -e "Activated environment $ENV_NAME" | tee -a install.log
 
-conda install -y git >> install.log 2>&1
-
-
 # Install all packages with pip
 if [ $(python -c "import sys; print(sys.version_info.major)") -gt '2' ]; then
     echo 'Chimera Pharmacophore can only be installed within a Python 2.7 environment.' >&2
@@ -173,5 +165,12 @@ echo "
 ---------------------------------------------------------
   Done! 
   Thanks for installing Chimera Pharmacophore!
+  
+  To use the Pharmacophore Chimera extensions, activate
+  your new conda environment and launch the patched 
+  Chimera with: 
+  
+  source activate $ENV_NAME
+  pychimera --gui
 ---------------------------------------------------------
 " | tee -a install.log
