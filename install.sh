@@ -59,6 +59,7 @@ Do you want to install miniconda? Answer ([y]/n): " | tee -a install.log
     case "$choice" in
         ""|y|Y )
             wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda*.sh
+            source $HOME/.bashrc
             ;;
         * )
             echo "Ok! If you want to install it manually, you can visit:" | tee -a install.log
