@@ -434,3 +434,8 @@ def _apply_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
 		chimera_atom.setCoord(Coord(atom_position))
 		
 	chimera_mol.computeIdatmTypes()
+
+def _del_chimeraHs(molecule):
+	for atom in molecule.atoms:
+		if atom.element == Chimera.Element("H"):
+			molecule.deleteAtom(atom)
