@@ -5,7 +5,7 @@ set -e
 
 unset LD_LIBRARY_PATH
 
-PREFIX="$HOME/miniconda2/envs/insilichem/lib/python2.7/site-packages"
+PREFIX="$HOME/.local/insilichem/chimera_pharmacophore"
 ENV_NAME="insilichem"
 THIS_DIR=$(cd $(dirname $0); pwd)
 THIS_FILE=$(basename $0)
@@ -51,7 +51,8 @@ done
 # Check all requirements are in place
 
 if ! [ -x "$(command -v conda)" ]; then
-  wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda*.sh >> install.log 2>&1
+  echo 'Error: conda is not installed or in PATH. Visit https://conda.io/miniconda.html to install it or put it in PATH.' >&2
+  exit 1
 fi
 
 # Actual installation begins
@@ -148,7 +149,7 @@ conda env update -n $ENV_NAME -f $ENVIRONMENTYML >> install.log 2>&1
 
 echo "Installing Chimera Pharmacophore extensions with pip..." | tee -a install.log
 pip install -U git+https://github.com/insilichem/pychimera.git >> install.log 2>&1
-pip install -U git+https://github.com/josan82/chimera_p4.git >> install.log 2>&1
+pip install -U -t $PREFIX git+https://github.com/josan82/chimera_p4.git >> install.log 2>&1
 
 echo "Registering extensions in UCSF Chimera..." | tee -a install.log
 pychimera -c "import chimera; chimera.extension.manager.addDirectory(\"$PREFIX\", True)" >> install.log 2>&1 || exit_code=$?
