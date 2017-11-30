@@ -437,5 +437,5 @@ def _apply_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
 
 def _del_chimeraHs(molecule):
 	for atom in molecule.atoms:
-		if atom.element == Chimera.Element("H"):
+		if atom.element == chimera.Element("H"):
 			molecule.deleteAtom(atom)
