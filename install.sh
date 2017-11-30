@@ -51,12 +51,24 @@ done
 # Check all requirements are in place
 
 if ! [ -x "$(command -v conda)" ]; then
-  echo 'Error: conda is not installed or in PATH. Visit https://conda.io/miniconda.html to install it or put it in PATH.' >&2
-  exit 1
+  echo -n "
+Error: conda is not installed or in PATH. If you want to continue with
+Chimera Pharmacophore installation, you have to install it.
+Do you want to install miniconda? Answer ([y]/n): " | tee -a install.log
+    read choice
+    case "$choice" in
+        ""|y|Y )
+            wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && bash Miniconda*.sh
+            ;;
+        * )
+            echo "Ok! If you want to install it manually, you can visit:" | tee -a install.log
+            echo "https://conda.io/miniconda.html" | tee -a install.log
+            exit 1
+            ;;
+    esac
 fi
 
 # Actual installation begins
-
 echo "Chimera Pharmacophore installation started on $(date)" > install.log
 
 if [[ $BATCH == 0 ]] # interactive mode
