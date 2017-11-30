@@ -149,8 +149,8 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 							f.featDirs = _GetDonor2FeatVects(m.GetConformer(-1), aids, scale=(mergeTol)) 
 						elif len(hvyNbrs) == 3: 
 							f.featDirs = FeatDirUtils.GetDonor3FeatVects(m.GetConformer(-1), aids, scale=(mergeTol))
-				elif f.GetFamily() == 'Aromatic':
-					f.featDirs = FeatDirUtils.GetAromaticFeatVects(m.GetConformer(-1), f.GetAtomIds(), f.GetPos(-1), scale=(mergeTol))				
+				#elif f.GetFamily() == 'Aromatic':
+				#	f.featDirs = FeatDirUtils.GetAromaticFeatVects(m.GetConformer(-1), f.GetAtomIds(), f.GetPos(-1), scale=(mergeTol))				
 			rawFeats.append(f)
 		# filter that list down to only include the ones we're intereted in 
 		featList = [f for f in rawFeats if f.GetFamily() in keep]
