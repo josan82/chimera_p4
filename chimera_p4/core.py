@@ -20,7 +20,7 @@ from rdkit.Chem.FeatMaps import FeatMaps, FeatMapUtils as FMU
 from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
 from rdkit.Chem.AllChem import BuildFeatureFactory, MMFFGetMoleculeProperties, EmbedMultipleConfs, AddHs, RemoveHs
 
-from aux_functions import _chimera_to_rdkit, _GetAcceptor1FeatVects, _GetDonor2FeatVects, _MergeFeatPoints, _apply_atom_positions
+from aux_functions import _chimera_to_rdkit, _GetAcceptor1FeatVects, _GetDonor2FeatVects, _MergeFeatPoints, _apply_atom_positions, _del_chimeraHs
 #import aux_functions as aux
 
 FEATURES_FILE = os.path.join(os.path.dirname(__file__), 'BaseFeatures.fdef')
@@ -200,8 +200,8 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 
 #Function from plume with small changes in sanitization
 def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **kwargs):
-	reference.deleteAtom(chimera.Element("H"))
-	probe.deleteAtom(chimera.Element("H"))
+	_del_chimeraHs(reference)
+	_del_chimeraHs(probe)
 	rdk_reference, ref_map = _chimera_to_rdkit(reference)
 	rdk_probe, probe_map = _chimera_to_rdkit(probe)
 	FastFindRings(rdk_reference)
