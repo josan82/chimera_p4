@@ -1,10 +1,12 @@
 Usage of command open3align:
 
-open3align mol-spec [nConformers int]
+open3align spec [nConformers int]
 
 Parameters
 ----------
-nConformers, int (optional, default=0): number of conformers that will be 
+spec, type mol-spec: molecules on which the alignment will be performed.
+
+nConformers, type int (optional, default=0): number of conformers that will be 
 	generated for each molecule.
 
 Description
@@ -20,7 +22,7 @@ its score (the higher, the better).
 In the case of the calculation of conformers, it is important to note that the 
 time of calculation is increased significantly in proportion with the number of 
 conformers demanded. It is also important to remark that the conformers 
-generation has an estochastic component, which can lead to obtain alignments 
+generation has an stochastic component, which can lead to obtain alignments 
 with lower scores than without using conformers. Normally, a higher value of 
 nConformers will lead to a higher score.
 
@@ -40,16 +42,18 @@ molecule.
 --------------------------------------------------------------------------------
 Usage of command p4:
 
-p4 mol-spec [minRepeats int] [mergeTol float]
+p4 spec [minRepeats int] [mergeTol float]
 
 Parameters
 ----------
-minRepeats, int (optional, default=1): number of molecules in which a feature 
-	has to be found to incorporate it to the resulting pharmacophore.
+spec, type mol-spec: molecules on which the pharmacophore will be performed.
 
-mergeTol, float (optional, default=1.5): two features of the same family will be
-	merged and considered the same if their distance is below this number (in 
-	angstroms).
+minRepeats, type int (optional, default=1): number of molecules in which a 
+	feature has to be found to incorporate it to the resulting pharmacophore.
+
+mergeTol, type float (optional, default=1.5): two features of the same family
+	will be	merged and considered the same if their distance is below this 
+	number (in angstroms).
 
 Description
 -----------
