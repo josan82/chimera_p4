@@ -247,8 +247,9 @@ def open3align(molecules_sel, transform=True, nConformers=0):
 	
 	#Calculating the best scored alignment
 	max_score = 0.0
-	for reference in molecules:
-
+	for i, reference in enumerate(molecules):
+		msg = "Processing molecule {} of {}".format(i+1, len(molecules))
+		chimera.statusline.show_message(msg)
 		align_score = 0.0
 		for probe in molecules:
 			if(molecules.index(probe) is not molecules.index(reference)):
