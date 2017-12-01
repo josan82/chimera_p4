@@ -34,7 +34,7 @@ Alignment of the molecules from id 0 to id 5, without using conformers
 generation.
 
 open3align #0-5 nConformers 10
-Alignment of the molecules from id 0 to id 11, generating 10 conformers for each
+Alignment of the molecules from id 0 to id 5, generating 10 conformers for each
 molecule.
 
 --------------------------------------------------------------------------------
