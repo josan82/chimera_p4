@@ -1,0 +1,74 @@
+Usage of command open3align:
+
+open3align mol-spec [nConformers int]
+
+Parameters
+----------
+nConformers, int (optional, default=0): number of conformers that will be 
+	generated for each molecule.
+
+Description
+-----------
+open3align performs an aligment of the indicated molecules, using the 
+Open3DALIGN algorithm (Tosco et al., 2011). The alignment can be done by using 
+only the conformers already present in the Chimera open models, or by 
+calculating the number of conformers for each molecule indicated in the 
+nConformers parameter, which is optional. In both cases, the program will return 
+the molecules aligned in the best alignment found by the algorithm, indicating 
+its score (the higher, the better).
+
+In the case of the calculation of conformers, it is important to note that the 
+time of calculation is increased significantly in proportion with the number of 
+conformers demanded. It is also important to remark that the conformers 
+generation has an estochastic component, which can lead to obtain alignments 
+with lower scores than without using conformers. Normally, a higher value of 
+nConformers will lead to a higher score.
+
+NOTE: If some of the selected molecules has Hydrogen atoms, they will be removed 
+before starting the alignment algorithm.
+
+Examples of use
+---------------
+open3align #0-5
+Alignment of the molecules from id 0 to id 5, without using conformers 
+generation.
+
+open3align #0-5 nConformers 10
+Alignment of the molecules from id 0 to id 11, generating 10 conformers for each
+molecule.
+
+--------------------------------------------------------------------------------
+Usage of command p4:
+
+p4 mol-spec [minRepeats int] [mergeTol float]
+
+Parameters
+----------
+minRepeats, int (optional, default=1): number of molecules in which a feature 
+	has to be found to incorporate it to the resulting pharmacophore.
+
+mergeTol, float (optional, default=1.5): two features of the same family will be
+	merged and considered the same if their distance is below this number (in 
+	angstroms).
+
+Description
+-----------
+p4 performs the common pharmacophoric model of the selected molecules, based on 
+an amplied and modified version of the FeatMaps and Feature modules from the 
+RDKit library. The feature families that will be shown are: donor, acceptor, 
+negative ionizable, positive ionizable, aromatic and lumped hydrophobe. 
+
+With the parameter minRepeats, the user can control the minimum amount of 
+molecules that have to contain a feature to show it in the common pharmacophore.
+
+NOTE: When a pharmacophoric model is calculated with p4 command, all the 
+previous pharmacophoric features present in the model panel will be removed.
+
+Examples of use
+---------------
+p4 #0
+Shows the pharmacophoric features of the molecule with id 0.
+
+p4 #0-9 minRepeats 5
+Shows the pharmacophoric features that are present at least in five of the 
+molecules with id from 0 to 9.
