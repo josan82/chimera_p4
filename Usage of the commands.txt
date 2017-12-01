@@ -22,7 +22,7 @@ its score (the higher, the better).
 In the case of the calculation of conformers, it is important to note that the 
 time of calculation is increased significantly in proportion with the number of 
 conformers demanded. It is also important to remark that the conformers 
-generation has an stochastic component, which can lead to obtain alignments 
+generation has a stochastic component, which can lead to obtain alignments 
 with lower scores than without using conformers. Normally, a higher value of 
 nConformers will lead to a higher score.
 
@@ -58,7 +58,7 @@ mergeTol, type float (optional, default=1.5): two features of the same family
 Description
 -----------
 p4 performs the common pharmacophoric model of the selected molecules, based on 
-an amplied and modified version of the FeatMaps and Feature modules from the 
+an enlarged and modified version of the FeatMaps and Feature modules from the 
 RDKit library. The feature families that will be shown are: donor, acceptor, 
 negative ionizable, positive ionizable, aromatic and lumped hydrophobe. 
 
