@@ -179,7 +179,7 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 	
 	molecules = molecules_sel.molecules()
 
-	p4map = calc_p4map(molecules, mergeTol=mergeTol, minRepeats=minRepeats, showVectors=showVectors)
+	p4map = calc_p4map(molecules, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 
 	for feat in p4map._feats:
 		if feat.GetFamily() != 'Donor':
