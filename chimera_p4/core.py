@@ -240,6 +240,7 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 
 #New function
 def open3align(molecules_sel, transform=True, nConformers=0):
+	chimera.openModels.remove(chimera.openModels.list(id=100))
 	molecules = molecules_sel.molecules()
 
 	if not len(molecules) > 1:
