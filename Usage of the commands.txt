@@ -26,7 +26,7 @@ generation has a stochastic component, which can lead to obtain alignments
 with lower scores than without using conformers. Normally, a higher value of 
 nConformers will lead to a higher score.
 
-NOTE: If some of the selected molecules has Hydrogen atoms, they will be removed 
+NOTE: If some of the selected molecules have Hydrogen atoms, they will be removed 
 before starting the alignment algorithm.
 
 Examples of use
