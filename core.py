@@ -121,7 +121,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 				print ("Atom with Id:", atom.GetIdx(), "is of element:", atom.GetSymbol(), "and has formal charge:", atom.GetFormalCharge(), file=f)
 			for bond in mol.GetBonds():
 				print("Bond between", bond.GetBeginAtomIdx(),"and", bond.GetEndAtomIdx(),"has order", bond.GetBondTypeAsDouble(), file=f)
-
+	f.close()
 	fdef = BuildFeatureFactory(FEATURES_FILE)
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
