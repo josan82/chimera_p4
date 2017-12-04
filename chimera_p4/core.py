@@ -115,14 +115,6 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
 
-	with open('./test_session.txt', 'a') as f:
-		for i, mol in enumerate(rdkit_mols):
-			print("Molecule:", i, file=f)
-			for atom in mol.GetAtoms():
-				print ("Atom with Id:", atom.GetIdx(), "is of element:", atom.GetSymbol(), "and has formal charge:", atom.GetFormalCharge(), file=f)
-			for bond in mol.GetBonds():
-				print("Bond between", bond.GetBeginAtomIdx(),"and", bond.GetEndAtomIdx(),"has order", bond.GetBondTypeAsDouble(), file=f)
-	f.close()
 	fdef = BuildFeatureFactory(FEATURES_FILE)
 	fmParams = {}
 	for k in fdef.GetFeatureFamilies():
@@ -172,20 +164,19 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		global_fmap = FMU.CombineFeatMaps(global_fmap, fmap, mergeMetric=0)	
 	
 	matrix = FMU.GetFeatFeatDistMatrix(global_fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
+	
 	p4map = FeatMaps.FeatMap(params=fmParams)
-	with open('./test_session.txt', 'a') as f:
-		for i, vector in enumerate(matrix):
-			feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
-			feat_indexs.append(i)
-			if (len(feat_indexs) >= minRepeats):
-				for feat_index in feat_indexs:
-					p4map.AddFeature(global_fmap._feats[feat_index], weight=1)
-		print(p4map, file=f)
-		Merge = True
-		while Merge == True:
-			Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
-		print(p4map, file=f)
-	f.close()	
+	for i, vector in enumerate(matrix):
+		feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
+		feat_indexs.append(i)
+		if (len(feat_indexs) >= minRepeats):
+			for feat_index in feat_indexs:
+				p4map.AddFeature(global_fmap._feats[feat_index], weight=1)
+	
+	Merge = True
+	while Merge == True:
+		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
+	
 	return p4map
 
 def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
