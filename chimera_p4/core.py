@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 import chimera
+from SimpleSession import registerAttribute
 
 try:
 	from cStringIO import StringIO
@@ -162,6 +164,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		global_fmap = FMU.CombineFeatMaps(global_fmap, fmap, mergeMetric=0)	
 	
 	matrix = FMU.GetFeatFeatDistMatrix(global_fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
+	
 	p4map = FeatMaps.FeatMap(params=fmParams)
 	for i, vector in enumerate(matrix):
 		feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
@@ -169,13 +172,16 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		if (len(feat_indexs) >= minRepeats):
 			for feat_index in feat_indexs:
 				p4map.AddFeature(global_fmap._feats[feat_index], weight=1)
+	
 	Merge = True
 	while Merge == True:
 		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
+	
 	return p4map
 
 def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
+	registerAttribute(chimera.Bond, "order")
 	
 	molecules = molecules_sel.molecules()
 
@@ -241,6 +247,7 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 #New function
 def open3align(molecules_sel, transform=True, nConformers=0):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
+	registerAttribute(chimera.Bond, "order")
 	molecules = molecules_sel.molecules()
 
 	if not len(molecules) > 1:
