@@ -109,6 +109,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rdkit_mols = []
 	rdkit_maps = []
 	for mol in molecules:
+		_del_chimeraHs(mol)
 		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
 		rdkit_mol = Chem.AddHs(rdkit_mol, addCoords=True)
 		rdkit_mols.append(rdkit_mol)
