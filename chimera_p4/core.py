@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 import chimera
 
@@ -174,7 +175,8 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 		Merge = True
 		while Merge == True:
 			Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
-		print(p4map, file=f)	
+		print(p4map, file=f)
+	f.close()	
 	return p4map
 
 def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
