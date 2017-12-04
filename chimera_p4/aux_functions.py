@@ -405,8 +405,8 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 		emol.GetConformer().SetAtomPosition(i, atom.coord().data())
 	for bond in molecule.bonds:
 		a1, a2 = bond.atoms
-		if hasattr(bond, 'order'):
-			bond_order =  RDKit_BondType[float(bond.order)]
+		if hasattr(bond, 'order') and bond.order:
+			bond_order = RDKit_BondType[float(bond.order)]
 		else:
 			bond_order = Chem.BondType.SINGLE		
 		emol.AddBond(atom_map[a1], atom_map[a2], bond_order)

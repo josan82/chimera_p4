@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import chimera
+from SimpleSession import registerAttribute
 
 try:
 	from cStringIO import StringIO
@@ -109,7 +110,6 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rdkit_mols = []
 	rdkit_maps = []
 	for mol in molecules:
-		_del_chimeraHs(mol)
 		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
 		rdkit_mol = Chem.AddHs(rdkit_mol, addCoords=True)
 		rdkit_mols.append(rdkit_mol)
@@ -190,6 +190,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 
 def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
+	registerAttribute(chimera.Bond, "order")
 	
 	molecules = molecules_sel.molecules()
 
@@ -255,6 +256,7 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 #New function
 def open3align(molecules_sel, transform=True, nConformers=0):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
+	registerAttribute(chimera.Bond, "order")
 	molecules = molecules_sel.molecules()
 
 	if not len(molecules) > 1:
