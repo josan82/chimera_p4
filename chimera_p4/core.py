@@ -116,7 +116,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 
 	with open('./test_session.txt', 'a') as f:
 		for i, mol in enumerate(rdkit_mols):
-			print("Molecule:" i, file=f)
+			print("Molecule:", i, file=f)
 			for atom in mol.GetAtoms():
 				print ("Atom with Id:", atom.GetIdx(), "is of element:", atom.GetSymbol(), "and has formal charge:", atom.GetFormalCharge(), file=f)
 			for bond in mol.GetBonds():
