@@ -163,15 +163,18 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	
 	matrix = FMU.GetFeatFeatDistMatrix(global_fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
 	p4map = FeatMaps.FeatMap(params=fmParams)
-	for i, vector in enumerate(matrix):
-		feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
-		feat_indexs.append(i)
-		if (len(feat_indexs) >= minRepeats):
-			for feat_index in feat_indexs:
-				p4map.AddFeature(global_fmap._feats[feat_index], weight=1)
-	Merge = True
-	while Merge == True:
-		Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
+	with open('test_session', 'a') as f:
+		for i, vector in enumerate(matrix):
+			feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
+			feat_indexs.append(i)
+			if (len(feat_indexs) >= minRepeats):
+				for feat_index in feat_indexs:
+					p4map.AddFeature(global_fmap._feats[feat_index], weight=1)
+		print(p4map, file=f)
+		Merge = True
+		while Merge == True:
+			Merge = _MergeFeatPoints(p4map, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode)
+		print(p4map, file=f)	
 	return p4map
 
 def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
