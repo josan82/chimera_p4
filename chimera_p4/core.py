@@ -163,7 +163,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	
 	matrix = FMU.GetFeatFeatDistMatrix(global_fmap, mergeMetric=mergeMetric, mergeTol=mergeTol, dirMergeMode=dirMergeMode, compatFunc=FMU.familiesMatch)
 	p4map = FeatMaps.FeatMap(params=fmParams)
-	with open('test_session', 'a') as f:
+	with open('./test_session.txt', 'a') as f:
 		for i, vector in enumerate(matrix):
 			feat_indexs = [vector.index(x) for x in vector if x<mergeTol]
 			feat_indexs.append(i)
