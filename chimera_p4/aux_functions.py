@@ -346,7 +346,7 @@ def _GetDonor2FeatVects(conf, featAtoms, scale=1.5):
 		bvec.Normalize() 
 		bvec *= scale 
 		bvec += cpt 
-		return ((cpt, bvec), ), 'linear'
+		#return ((cpt, bvec), ), 'linear'
 		if FeatDirUtils._checkPlanarity(conf, cpt, nbrs): 
 			# only the hydrogen atom direction needs to be used 
 			return ((cpt, bvec), ), 'linear' 
