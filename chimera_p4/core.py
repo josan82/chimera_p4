@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import chimera
+from chimera import runCommand
 from SimpleSession import registerAttribute
 
 try:
@@ -106,6 +107,11 @@ class p4_element(object):
 			self._subid += 1
 		return vrml
 
+def draw_p4legend(families):
+	runCommand("2dlabels create label1 text1 color yellow xpos 0.05 ypos 0.05")
+	#for i, family in enumerate(families):
+
+
 def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=1.5, dirMergeMode=1, minRepeats=1, showVectors=True):
 	rdkit_mols = []
 	rdkit_maps = []
@@ -179,13 +185,13 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	
 	return p4map
 
-def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
+def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe')):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	registerAttribute(chimera.Bond, "order")
 	
 	molecules = molecules_sel.molecules()
 
-	p4map = calc_p4map(molecules, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
+	p4map = calc_p4map(molecules, families=families, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 
 	for feat in p4map._feats:
 		if feat.GetFamily() != 'Donor':
@@ -200,7 +206,9 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 				elif fType =='cone':
 					p4_elem = p4_element(shape="cone", origin=head, end=tail, color=_featColors[feat.GetFamily()], size=(1.33))
 				p4_elem.draw()
-		
+	
+	draw_p4legend(families)
+
 	msg = "Chimera pharmacophore done"
 	chimera.statusline.show_message(msg)
 	
