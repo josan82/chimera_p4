@@ -118,7 +118,7 @@ def draw_p4legend(families):
 		label_color = str(_featColors[family])
 		label_xpos = str(0.05)
 		label_ypos = str(0.95 - (0.05)*i)
-		label_command = "2dlabels create " + label_id + " " + label_text + " color " + label_color + " xpos " + label_xpos + " ypos " + label_ypos
+		label_command = "2dlabels create " + label_id + " text '\u2588 " + label_text + "' xpos " + label_xpos + " ypos " + label_ypos
 		runCommand(label_command)
 
 def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=1.5, dirMergeMode=1, minRepeats=1, showVectors=True):
