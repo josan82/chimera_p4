@@ -108,9 +108,18 @@ class p4_element(object):
 		return vrml
 
 def draw_p4legend(families):
-	runCommand("2dlabels create label1 text 'test label' color yellow xpos 0.05 ypos 0.05")
-	#for i, family in enumerate(families):
+	#Delete previous labels
+	runCommand("2dlabels delete *")
 
+	#Create one label for each family
+	for i, family in enumerate(families):
+		label_id = "p4_label_" + str(i)
+		label_text = family
+		label_color = str(_featColors[family])
+		label_xpos = str(0.05)
+		label_ypos = str(0.95 - (0.05)*i)
+		label_command = "2dlabels create " + label_id + " " + label_text + " color " + label_color + " xpos " + label_xpos + " ypos " + label_ypos
+		runCommand(label_command)
 
 def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=1.5, dirMergeMode=1, minRepeats=1, showVectors=True):
 	rdkit_mols = []
