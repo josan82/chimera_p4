@@ -108,7 +108,7 @@ class p4_element(object):
 		return vrml
 
 def draw_p4legend(families):
-	runCommand("2dlabels create label1 text1 color yellow xpos 0.05 ypos 0.05")
+	runCommand("2dlabels create label1 text 'test label' color yellow xpos 0.05 ypos 0.05")
 	#for i, family in enumerate(families):
 
 
