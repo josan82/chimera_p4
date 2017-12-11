@@ -42,7 +42,7 @@ molecule.
 --------------------------------------------------------------------------------
 Usage of command p4:
 
-p4 spec [minRepeats int] [mergeTol float]
+p4 spec [minRepeats int] [mergeTol float] [showLegend True|False]
 
 Parameters
 ----------
@@ -54,6 +54,9 @@ minRepeats, type int (optional, default=1): number of molecules in which a
 mergeTol, type float (optional, default=1.5): two features of the same family
 	will be	merged and considered the same if their distance is below this 
 	number (in angstroms).
+
+showLegend, type boolean (optional, default=True): the color legend of the 
+	features is shown on the screen if this parameter is set to True (default).
 
 Description
 -----------

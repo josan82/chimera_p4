@@ -4,6 +4,9 @@
 from __future__ import print_function, division
 import chimera.extension
 from Midas.midas_text import addCommand
+import Tkinter as tk
+import Tix
+Tix._default_root = tk._default_root
 
 def cmd_p4(cmdName, args):
 	from Midas.midas_text import doExtensionFunc

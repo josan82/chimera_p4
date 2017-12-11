@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import chimera
+from chimera import runCommand
 from SimpleSession import registerAttribute
 
 try:
@@ -106,6 +107,21 @@ class p4_element(object):
 			self._subid += 1
 		return vrml
 
+def draw_p4legend(families):
+	#Delete previous labels
+	runCommand("2dlabels delete *")
+
+	#Create one label for each family
+	for i, family in enumerate(families):
+		label_id = "p4_label_" + str(i)
+		label_text = family
+		label_color = str(_featColors[family]).replace(" ", ",")
+		label_xpos = str(0.02)
+		label_ypos = str(0.95 - (0.035)*i)
+		label_size = str(16)
+		label_command = "2dlabels create " + label_id + " text '\u2588 " + label_text + "' color " + label_color + " size " + label_size + " xpos " + label_xpos + " ypos " + label_ypos
+		runCommand(label_command)
+
 def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), mergeMetric=1, mergeTol=1.5, dirMergeMode=1, minRepeats=1, showVectors=True):
 	rdkit_mols = []
 	rdkit_maps = []
@@ -179,13 +195,13 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	
 	return p4map
 
-def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
+def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), showLegend=True):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	registerAttribute(chimera.Bond, "order")
 	
 	molecules = molecules_sel.molecules()
 
-	p4map = calc_p4map(molecules, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
+	p4map = calc_p4map(molecules, families=families, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 
 	for feat in p4map._feats:
 		if feat.GetFamily() != 'Donor':
@@ -200,7 +216,10 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True):
 				elif fType =='cone':
 					p4_elem = p4_element(shape="cone", origin=head, end=tail, color=_featColors[feat.GetFamily()], size=(1.33))
 				p4_elem.draw()
-		
+	
+	if showLegend:	
+		draw_p4legend(families)
+
 	msg = "Chimera pharmacophore done"
 	chimera.statusline.show_message(msg)
 	
