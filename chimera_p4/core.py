@@ -3,6 +3,8 @@
 from __future__ import print_function
 
 import chimera
+import Tkinter as tk
+import Tix
 from chimera import runCommand
 from SimpleSession import registerAttribute
 
@@ -27,6 +29,7 @@ from aux_functions import _chimera_to_rdkit, _GetAcceptor1FeatVects, _GetDonor2F
 #import aux_functions as aux
 
 FEATURES_FILE = os.path.join(os.path.dirname(__file__), 'BaseFeatures.fdef')
+Tix._default_root = tk._default_root
 
 _featColors = { 
 	'Donor': '0 1 1', 
@@ -117,8 +120,8 @@ def draw_p4legend(families):
 		label_text = family
 		label_color = str(_featColors[family])
 		label_xpos = str(0.02)
-		label_ypos = str(0.95 - (0.03)*i)
-		label_size = str(18)
+		label_ypos = str(0.95 - (0.035)*i)
+		label_size = str(16)
 		label_command = "2dlabels create " + label_id + " text '\u2588 " + label_text + "' size " + label_size + " xpos " + label_xpos + " ypos " + label_ypos
 		runCommand(label_command)
 
