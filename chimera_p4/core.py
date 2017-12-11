@@ -219,6 +219,8 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 	
 	if showLegend:	
 		draw_p4legend(families)
+	else:
+		runCommand("2dlabels delete *")
 
 	msg = "Chimera pharmacophore done"
 	chimera.statusline.show_message(msg)
