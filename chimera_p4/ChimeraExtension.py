@@ -21,7 +21,7 @@ def cmd_o3align(cmdName, args):
 addCommand("p4", cmd_p4)
 addCommand("open3align", cmd_o3align)
 
-"""
+
 #Code for GUI implementation
 class p4Extension(chimera.extension.EMO):
 
@@ -41,4 +41,3 @@ class p4Extension(chimera.extension.EMO):
         self.module('gui').showUI()
 
 chimera.extension.manager.registerExtension(p4Extension(__file__))
-"""
