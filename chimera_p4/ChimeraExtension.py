@@ -26,7 +26,7 @@ addCommand("open3align", cmd_o3align)
 class p4Extension(chimera.extension.EMO):
 
     def name(self):
-        return 'Plume Pharmacophore'
+        return 'Pharmacophore'
 
     def description(self):
         return "Calculate pharmacophoric model of a set of ligands"
