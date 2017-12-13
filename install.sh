@@ -152,6 +152,7 @@ conda env update -n $ENV_NAME -f $ENVIRONMENTYML >> install.log 2>&1
 echo "Installing Chimera Pharmacophore extensions with pip..." | tee -a install.log
 pip install -U git+https://github.com/insilichem/pychimera.git >> install.log 2>&1
 pip install -U -t $PREFIX git+https://github.com/josan82/chimera_p4.git >> install.log 2>&1
+pip install -U -t $PREFIX git+https://github.com/insilichem/libplume.git >> install.log 2>&1
 
 echo "Registering extensions in UCSF Chimera..." | tee -a install.log
 pychimera -c "import chimera; chimera.extension.manager.addDirectory(\"$PREFIX\", True)" >> install.log 2>&1 || exit_code=$?
