@@ -46,7 +46,7 @@ class p4Dialog(PlumeBaseDialog):
 
 	def __init__(self, *args, **kwargs):
 		# GUI init
-		self.title = 'Plume pharmacophore'
+		self.title = 'Pharmacophore'
 		self.controller = None
 
 		#Variables
