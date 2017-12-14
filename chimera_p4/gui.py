@@ -92,7 +92,7 @@ class p4Dialog(PlumeBaseDialog):
 		#tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
 		#self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
 		tk.Label(ui_p4_frame, text='Minimum of repetitions per feature').grid(row=1, column=0, padx=5, pady=5, sticky='w')
-		self.ui_min_repeats = tk.Entry(ui_p4_frame, textvariable=self._minRepeats, bg='white', width=6).grid(row=1, column=1, padx=5, pady=5, sticky='w')
+		self.ui_min_repeats = tk.Entry(self.ui_p4_frame, textvariable=self._minRepeats, bg='white', width=6).grid(row=1, column=1, padx=5, pady=5, sticky='w')
 		#tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
 		#self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
 		self.ui_p4_frame.rowconfigure(0, weight=1)
