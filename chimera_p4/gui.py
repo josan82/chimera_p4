@@ -72,7 +72,7 @@ class p4Dialog(PlumeBaseDialog):
 		#ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules')
 		self.ui_input_frame.rowconfigure(0, weight=1)
 		self.ui_input_frame.columnconfigure(1, weight=1)
-		self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame)
+		self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame, listbox_selectmode="extended")
 		self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
 		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
