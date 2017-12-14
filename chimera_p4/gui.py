@@ -13,7 +13,7 @@ from chimera.widgets import MoleculeScrolledListBox
 # Additional 3rd parties
 
 # Own
-from core import Controller, Model
+from core import Controller, Model, open3align
 #from prefs import prefs, _defaults
 from libplume.ui import PlumeBaseDialog
 
@@ -66,16 +66,19 @@ class p4Dialog(PlumeBaseDialog):
 		pass
 
 	def fill_in_ui(self, parent):
-		#self.canvas.columnconfigure(0, weight=1)
-		#row = 0
+		#First frame for selecting the molecules to align/calculate pharmacophore
 		self.ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules to align/calculate pharmacophore')
-		#ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules')
 		self.ui_input_frame.rowconfigure(0, weight=1)
 		self.ui_input_frame.columnconfigure(1, weight=1)
 		self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame, listbox_selectmode="extended")
 		self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
 		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
+		#Second frame to perform alignments
+		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perfom an alignment with open3align")
+		self.ui_o3align_btn = tk.Button(self.ui_calculation, text='Align!', command=self._cmd_o3align_btn)
+
+		#Third frame to perform pharmacophores
 		ui_config_frame = tk.LabelFrame(self.canvas, text='Configuration parameters')
 		tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
 		self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
@@ -84,6 +87,11 @@ class p4Dialog(PlumeBaseDialog):
 		tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
 		self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
 		ui_config_frame.pack(expand=True, fill='both', padx=5, pady=5)
+
+	def _cmd_o3align_btn(self):
+		molecules = self.ui_molecules.getvalue()
+		try:
+			open3align(molecules)
 
 	def Run(self):
 		"""
