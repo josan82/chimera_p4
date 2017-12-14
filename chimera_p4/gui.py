@@ -72,14 +72,14 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_input_frame.columnconfigure(1, weight=1)
 		self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame, listbox_selectmode="extended")
 		self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
-		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
+		self.ui_input_frame.grid(row=0, padx=5, pady=5, sticky='we')
 
 		#Second frame to perform alignments
 		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perfom an alignment with open3align")
 		self.ui_input_frame.rowconfigure(0, weight=1)
 		self.ui_input_frame.columnconfigure(1, weight=1)
 		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align!', command=self._cmd_o3align_btn)
-		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
+		self.ui_o3align_frame.grid(row=1, padx=5, pady=5, sticky='we')
 
 		"""
 		#Third frame to perform pharmacophores
