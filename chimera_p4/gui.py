@@ -92,6 +92,9 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		try:
 			open3align(molecules)
+		except Exception as e:
+			self.status('Could not align the molecules!', color='red', blankAfter=4)
+
 
 	def Run(self):
 		"""
