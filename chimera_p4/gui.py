@@ -98,13 +98,14 @@ class p4Dialog(PlumeBaseDialog):
 		"""
 
 	def _cmd_o3align_btn(self):
-		molecules = [self.ui_molecules.getvalue()]
+		molecules = self.ui_molecules.getvalue()
 		try:
 			open3align(molecules)
 		except Exception as e:
-			self.status('Could not align the molecules!', color='red', blankAfter=4)
-
-
+			if len(molecules) < 2:
+				self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
+			else:
+				self.status('Could not align the molecules!', color='red', blankAfter=4)
 	def Run(self):
 		"""
 		Default! Triggered action if you click on a Run button

@@ -269,7 +269,10 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 def open3align(molecules_sel, transform=True, nConformers=0):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	registerAttribute(chimera.Bond, "order")
-	molecules = molecules_sel.molecules()
+	try:
+		molecules = molecules_sel.molecules()
+	except Exception as e:
+		molecules = molecules_sel
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
