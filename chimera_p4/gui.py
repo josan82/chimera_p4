@@ -79,6 +79,7 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_input_frame.rowconfigure(1, weight=1)
 		self.ui_input_frame.columnconfigure(1, weight=1)
 		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align!', command=self._cmd_o3align_btn)
+		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
 		"""
 		#Third frame to perform pharmacophores
