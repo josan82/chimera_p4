@@ -40,9 +40,9 @@ BUTTON_STYLE = {
 }
 
 class p4Dialog(PlumeBaseDialog):
-	buttons = ('Run', 'Close')
+	buttons = ('Close')
 	default = None
-	help = 'https://www.insilichem.com'
+	help = 'https://github.com/josan82/chimerap4'
 
 	def __init__(self, *args, **kwargs):
 		# GUI init
@@ -98,7 +98,7 @@ class p4Dialog(PlumeBaseDialog):
 		"""
 
 	def _cmd_o3align_btn(self):
-		molecules = self.ui_molecules.getvalue()
+		molecules = [self.ui_molecules.getvalue()]
 		try:
 			open3align(molecules)
 		except Exception as e:
