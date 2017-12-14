@@ -64,7 +64,7 @@ class p4Dialog(PlumeBaseDialog):
 		self._set_defaults()
 
 	def _set_defaults(self):
-		pass
+		self._nConformers.set(0)
 
 	def fill_in_ui(self, parent):
 		#First frame for selecting the molecules to align/calculate pharmacophore
@@ -101,7 +101,9 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
 		try:
-			open3align(molecules, nConformers=nConformers)
+			max_score = open3align(molecules, nConformers=nConformers)
+			msg = "Alignment done! Score: {}".format(max_score)
+			self.status(msg, color='red', blankAfter=0)
 		except Exception as e:
 			if len(molecules) < 2:
 				self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
