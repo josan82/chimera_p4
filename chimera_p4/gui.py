@@ -50,6 +50,7 @@ class p4Dialog(PlumeBaseDialog):
 		self.controller = None
 
 		#Variables
+		self._nConformers = tk.IntVar()
 		self._mergeTol = tk.IntVar()
 		self._minRepeats = tk.IntVar()
 		self._p4Id = tk.IntVar()
