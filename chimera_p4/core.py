@@ -199,7 +199,10 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	registerAttribute(chimera.Bond, "order")
 	
-	molecules = molecules_sel.molecules()
+	try:
+		molecules = molecules_sel.molecules()
+	except Exception as e:
+		molecules = molecules_sel
 
 	p4map = calc_p4map(molecules, families=families, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 

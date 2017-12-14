@@ -13,7 +13,7 @@ from chimera.widgets import MoleculeScrolledListBox
 # Additional 3rd parties
 
 # Own
-from core import Controller, Model, open3align
+from core import Controller, Model, open3align, chimera_p4
 #from prefs import prefs, _defaults
 from libplume.ui import PlumeBaseDialog
 
@@ -51,9 +51,9 @@ class p4Dialog(PlumeBaseDialog):
 
 		#Variables
 		self._nConformers = tk.IntVar()
-		self._mergeTol = tk.IntVar()
+		#self._mergeTol = tk.IntVar()
 		self._minRepeats = tk.IntVar()
-		self._p4Id = tk.IntVar()
+		#self._p4Id = tk.IntVar()
 
 		# Fire up
 		super(p4Dialog, self).__init__(resizable=False, *args, **kwargs)
@@ -65,6 +65,7 @@ class p4Dialog(PlumeBaseDialog):
 
 	def _set_defaults(self):
 		self._nConformers.set(0)
+		self._minRepeats.set(1)
 
 	def fill_in_ui(self, parent):
 		#First frame for selecting the molecules to align/calculate pharmacophore
@@ -78,25 +79,28 @@ class p4Dialog(PlumeBaseDialog):
 		#Second frame to perform alignments
 		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perform an alignment with open3align")
 		tk.Label(self.ui_o3align_frame, text='Number of conformers:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
-		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, state='normal', width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, bg='white', width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
 		self.ui_o3align_frame.rowconfigure(0, weight=1)
 		self.ui_o3align_frame.columnconfigure(1, weight=1)
 		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align!', command=self._cmd_o3align_btn)
 		self.ui_o3align_btn.grid(row=0, column=2, padx=5, pady=5)
 		self.ui_o3align_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
-		"""
+		
 		#Third frame to perform pharmacophores
-		ui_config_frame = tk.LabelFrame(self.canvas, text='Configuration parameters')
-		tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
-		self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
-		tk.Label(ui_config_frame, text='Minimum appearences for feature').grid(row=2, column=0, padx=3, pady=3, sticky='e')
-		self.ui_min_repeats = tk.Entry(ui_config_frame, textvariable=self._minRepeats, width=6).grid(row=2, column=1, padx=3, pady=3)
-		tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
-		self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
-		ui_config_frame.pack(expand=True, fill='both', padx=5, pady=5)
-		"""
-
+		self.ui_p4_frame = tk.LabelFrame(self.canvas, text='Perform a pharmacophore')
+		#tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
+		#self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
+		tk.Label(ui_p4_frame, text='Minimum of repetitions per feature').grid(row=1, column=0, padx=5, pady=5, sticky='w')
+		self.ui_min_repeats = tk.Entry(ui_p4_frame, textvariable=self._minRepeats, bg='white', width=6).grid(row=1, column=1, padx=5, pady=5, sticky='w')
+		#tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
+		#self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
+		self.ui_p4_frame.rowconfigure(0, weight=1)
+		self.ui_p4_frame.columnconfigure(1, weight=1)
+		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore!', command=self._cmd_p4_btn)
+		self.ui_p4_btn.grid(row=0, column=2, padx=5, pady=5)
+		ui_p4_frame.pack(expand=True, fill='both', padx=5, pady=5)
+		
 	def _cmd_o3align_btn(self):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
@@ -109,6 +113,19 @@ class p4Dialog(PlumeBaseDialog):
 				self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
 			else:
 				self.status('Could not align the molecules!', color='red', blankAfter=4)
+	
+	def _cmd_p4_btn(self):
+		molecules = self.ui_molecules.getValue()
+		minRepeats = self._minRepeats.get()
+		try:
+			chimera_p4(molecules, minRepeats=minRepeats)
+			self.status("Pharmacophore done!", blankAfter=4)
+		except Exception as e:
+			if len(molecules) < 1:
+				self.status('You have to select at least 1 molecule!', color='red', blankAfter=4)
+			else:
+				self.status('Could not perform the pharmacophore!', color='red', blankAfter=4)
+
 	def Run(self):
 		"""
 		Default! Triggered action if you click on a Run button
