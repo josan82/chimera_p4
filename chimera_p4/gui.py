@@ -42,7 +42,7 @@ BUTTON_STYLE = {
 class p4Dialog(PlumeBaseDialog):
 	buttons = ('Close')
 	default = None
-	help = 'https://github.com/josan82/chimerap4'
+	help = 'https://github.com/josan82/chimera_p4'
 
 	def __init__(self, *args, **kwargs):
 		# GUI init
