@@ -82,7 +82,7 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, bg='white', width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
 		self.ui_o3align_frame.rowconfigure(0, weight=1)
 		self.ui_o3align_frame.columnconfigure(1, weight=1)
-		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align!', command=self._cmd_o3align_btn)
+		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align', command=self._cmd_o3align_btn)
 		self.ui_o3align_btn.grid(row=0, column=2, padx=5, pady=5)
 		self.ui_o3align_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
@@ -91,13 +91,13 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_p4_frame = tk.LabelFrame(self.canvas, text='Perform a pharmacophore')
 		#tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
 		#self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
-		tk.Label(ui_p4_frame, text='Minimum of repetitions per feature').grid(row=1, column=0, padx=5, pady=5, sticky='w')
-		self.ui_min_repeats = tk.Entry(self.ui_p4_frame, textvariable=self._minRepeats, bg='white', width=6).grid(row=1, column=1, padx=5, pady=5, sticky='w')
+		tk.Label(self.ui_p4_frame, text='Minimum of repetitions per feature:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
+		self.ui_min_repeats = tk.Entry(self.ui_p4_frame, textvariable=self._minRepeats, bg='white', width=3).grid(row=0, column=1, padx=5, pady=5, sticky='w')
 		#tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
 		#self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
 		self.ui_p4_frame.rowconfigure(0, weight=1)
 		self.ui_p4_frame.columnconfigure(1, weight=1)
-		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore!', command=self._cmd_p4_btn)
+		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore', command=self._cmd_p4_btn)
 		self.ui_p4_btn.grid(row=0, column=2, padx=5, pady=5)
 		self.ui_p4_frame.pack(expand=True, fill='both', padx=5, pady=5)
 		
@@ -115,7 +115,7 @@ class p4Dialog(PlumeBaseDialog):
 				self.status('Could not align the molecules!', color='red', blankAfter=4)
 	
 	def _cmd_p4_btn(self):
-		molecules = self.ui_molecules.getValue()
+		molecules = self.ui_molecules.getvalue()
 		minRepeats = self._minRepeats.get()
 		try:
 			chimera_p4(molecules, minRepeats=minRepeats)

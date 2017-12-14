@@ -204,6 +204,9 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 	except Exception as e:
 		molecules = molecules_sel
 
+	if not len(molecules) > 0:
+		raise chimera.UserError("At least 1 molecule is needed to do a pharmacophore")
+
 	p4map = calc_p4map(molecules, families=families, mergeTol=mergeTol*mergeTol, minRepeats=minRepeats, showVectors=showVectors)
 
 	for feat in p4map._feats:
@@ -270,7 +273,10 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 
 #New function
 def open3align(molecules_sel, transform=True, nConformers=0):
+	#Delete possible previous pharmacophores
 	chimera.openModels.remove(chimera.openModels.list(id=100))
+	runCommand("2dlabels delete *")
+	
 	registerAttribute(chimera.Bond, "order")
 	try:
 		molecules = molecules_sel.molecules()
