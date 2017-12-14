@@ -66,12 +66,12 @@ class p4Dialog(PlumeBaseDialog):
 		pass
 
 	def fill_in_ui(self, parent):
-		self.canvas.columnconfigure(0, weight=1)
-		row = 0
+		#self.canvas.columnconfigure(0, weight=1)
+		#row = 0
 		self.ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules to align/calculate pharmacophore')
 		#ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules')
-		#ui_input_frame.rowconfigure(0, weight=1)
-		#ui_input_frame.columnconfigure(1, weight=1)
+		self.ui_input_frame.rowconfigure(0, weight=1)
+		self.ui_input_frame.columnconfigure(1, weight=1)
 		self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame)
 		self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
 		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
