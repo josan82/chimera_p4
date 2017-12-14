@@ -78,7 +78,7 @@ class p4Dialog(PlumeBaseDialog):
 		#Second frame to perform alignments
 		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perform an alignment with open3align")
 		tk.Label(self.ui_o3align_frame, text='Number of conformers:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
-		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, state='normal', width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
 		self.ui_o3align_frame.rowconfigure(0, weight=1)
 		self.ui_o3align_frame.columnconfigure(1, weight=1)
 		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align!', command=self._cmd_o3align_btn)
@@ -99,6 +99,7 @@ class p4Dialog(PlumeBaseDialog):
 
 	def _cmd_o3align_btn(self):
 		molecules = self.ui_molecules.getvalue()
+		nConformers = self._nConformers.get()
 		try:
 			open3align(molecules, nConformers=self._nConformers)
 		except Exception as e:
