@@ -76,7 +76,7 @@ class p4Dialog(PlumeBaseDialog):
 
 		#Second frame to perform alignments
 		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perfom an alignment with open3align")
-		self.ui_o3align_btn = tk.Button(self.ui_calculation, text='Align!', command=self._cmd_o3align_btn)
+		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align!', command=self._cmd_o3align_btn)
 
 		#Third frame to perform pharmacophores
 		ui_config_frame = tk.LabelFrame(self.canvas, text='Configuration parameters')
