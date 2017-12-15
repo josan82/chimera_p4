@@ -99,6 +99,8 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_p4_frame.columnconfigure(1, weight=1)
 		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore', command=self._cmd_p4_btn)
 		self.ui_p4_btn.grid(row=0, column=2, padx=5, pady=5)
+		self.ui_p4_options_btn = tk.Button(self.ui_p4_frame, text="Advanced Options", command=lambda: self.Open_window('ui_input_opt_window', self._fill_ui_input_opt_window))
+		self.ui_p4_options_btn.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 		self.ui_p4_frame.pack(expand=True, fill='both', padx=5, pady=5)
 		
 	def _cmd_o3align_btn(self):
@@ -127,6 +129,46 @@ class p4Dialog(PlumeBaseDialog):
 			else:
 				self.status('Could not perform the pharmacophore!', color='red', blankAfter=4)
 
+	def _fill_ui_input_opt_window(self):
+		# Create TopLevel window
+		self.ui_input_opt_window = tk.Toplevel()
+		self.Center(self.ui_input_opt_window)
+		self.ui_input_opt_window.title("Advanced Options")
+
+	# Script Functions
+	def Open_window(self, window, fill_function):
+		"""
+		Get sure the window is not opened
+		a second time
+		Parameters:
+		window: window to open
+		fill_function: fillin function for window
+		"""
+		try:
+			var_window = window
+			var_window.state()
+			if window == self.ui_stages_window:
+				self.set_stage_variables()
+				self.ui_stage_minimiz_tolerance_Entry.configure(state='disabled')
+				self.ui_stage_minimiz_maxsteps_Entry.configure(state ='disabled')
+				self.ui_stage_barostat_steps_Entry.configure(state='disabled')
+				self.ui_stage_pressure_Entry.configure(state='disabled')
+			var_window.deiconify()
+		except (AttributeError, tk.TclError):
+			return fill_function()
+
+	def Center(self, window):
+		"""
+		Update "requested size" from geometry manager
+		"""
+		window.update_idletasks()
+		x = (window.winfo_screenwidth() -
+			 window.winfo_reqwidth()) / 2
+		y = (window.winfo_screenheight() -
+			 window.winfo_reqheight()) / 2
+		window.geometry("+%d+%d" % (x, y))
+		window.deiconify()
+	
 	def Run(self):
 		"""
 		Default! Triggered action if you click on a Run button
