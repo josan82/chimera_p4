@@ -207,8 +207,7 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 		if feat.GetFamily() != 'Donor':
 			p4_elem = p4_element(shape="sphere", size=(mergeTol/2), origin=chimera.Point(feat.GetPos()[0],feat.GetPos()[1],feat.GetPos()[2]), color=_featColors[feat.GetFamily()])
 			p4_elem.draw()
-		
-		if feat.featDirs:
+		elif feat.featDirs:
 			ps, fType = feat.featDirs			
 			for tail, head in ps:
 				if fType == 'linear':
