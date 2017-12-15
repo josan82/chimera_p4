@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
 
 import chimera
 
@@ -167,33 +168,45 @@ def _MergeFeatPoints(fm, mergeMetric=FMU.MergeMetric.NoMerge, mergeTol=1.5,
 				if featI.featDirs and nbrFeat.featDirs:
 					ps1, fType1 = featI.featDirs
 					ps2, fType2 = nbrFeat.featDirs
-					if fType1 == fType2:
-						sumVec1 = 0
-						for i, pt in enumerate(ps1):
-							if (sumVec1 == 0):
-								sumVec1 = pt[1] - pt[0]
-							else:
-								sumVec1 += pt[1] - pt[0]
-						sumVec1 = (sumVec1/(i+1))
-						sumVec2 = 0
-						for i, pt in enumerate(ps2):
-							if (sumVec2 == 0):
-								sumVec2 = pt[1] - pt[0]
-							else:
-								sumVec2 += pt[1] - pt[0]
-						sumVec2 = (sumVec2/(i+1))
-						
-						sumVec = (sumVec1+sumVec2)/2
-						sumVec = Geometry.Point3D(sumVec[0], sumVec[1], sumVec[2])
-						sumVec.Normalize() 
-						if fType1 == 'linear':
-							sumVec *= 1.5
-						elif fType1 == 'cone':
-							sumVec *= 0.5
-						sumVec += newPos
-						featI.featDirs = ((newPos, sumVec), ), fType1
-					else:
-						del featI.featDirs
+				else:
+					ps1 = ps2 = None
+				if ps1 and ps2:
+					with open('test_file.txt', 'a') as f:
+						print('ps1', file=f)
+						print(ps1, file=f)
+						print('ps2', file=f)
+						print(ps2, file=f)
+						if fType1 == fType2:
+							sumVec1 = 0
+							print('ps1 enumerate', file=f)
+							for i, pt in enumerate(ps1):
+								print(pt, file=f)
+								if (sumVec1 == 0):
+									sumVec1 = pt[1] - pt[0]
+								else:
+									sumVec1 += pt[1] - pt[0]
+							sumVec1 = (sumVec1/(i+1))
+							sumVec2 = 0
+							print('ps2 enumerate', file=f)
+							for i, pt in enumerate(ps2):
+								print(pt, file=f)
+								if (sumVec2 == 0):
+									sumVec2 = pt[1] - pt[0]
+								else:
+									sumVec2 += pt[1] - pt[0]
+							sumVec2 = (sumVec2/(i+1))
+							
+							sumVec = (sumVec1+sumVec2)/2
+							sumVec = Geometry.Point3D(sumVec[0], sumVec[1], sumVec[2])
+							sumVec.Normalize() 
+							if fType1 == 'linear':
+								sumVec *= 1.5
+							elif fType1 == 'cone':
+								sumVec *= 0.5
+							sumVec += newPos
+							featI.featDirs = ((newPos, sumVec), ), fType1
+						else:
+							del featI.featDirs
 				else:
 					try:
 						del featI.featDirs
