@@ -195,14 +195,14 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	
 	return p4map
 
-def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), showLegend=True):
+def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, families=('Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe'), showLegend=True, _gui=None):
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	registerAttribute(chimera.Bond, "order")
 	
-	try:
-		molecules = molecules_sel.molecules()
-	except Exception as e:
+	if _gui:
 		molecules = molecules_sel
+	else:
+		molecules = molecules_sel.molecules()
 
 	if not len(molecules) > 0:
 		raise chimera.UserError("At least 1 molecule is needed to do a pharmacophore")
@@ -228,8 +228,9 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 	else:
 		runCommand("2dlabels delete *")
 
-	msg = "Chimera pharmacophore done"
-	chimera.statusline.show_message(msg)
+	if not _gui:
+		msg = "Chimera pharmacophore done"
+		chimera.statusline.show_message(msg)
 	
 	return True
 
@@ -272,16 +273,17 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 	return o3a_result   #return the alignment
 
 #New function
-def open3align(molecules_sel, transform=True, nConformers=0):
+def open3align(molecules_sel, transform=True, nConformers=0, _gui=None):
 	#Delete possible previous pharmacophores
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	runCommand("2dlabels delete *")
 	
 	registerAttribute(chimera.Bond, "order")
-	try:
-		molecules = molecules_sel.molecules()
-	except Exception as e:
+	
+	if _gui:
 		molecules = molecules_sel
+	else:
+		molecules = molecules_sel.molecules()
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
@@ -290,7 +292,10 @@ def open3align(molecules_sel, transform=True, nConformers=0):
 	max_score = 0.0
 	for i, reference in enumerate(molecules):
 		msg = "Processing molecule {} of {}".format(i+1, len(molecules))
-		chimera.statusline.show_message(msg)
+		if _gui:
+			_gui.status(msg, blankAfter=0)
+		else:
+			chimera.statusline.show_message(msg)
 		align_score = 0.0
 		for probe in molecules:
 			if(molecules.index(probe) is not molecules.index(reference)):
@@ -303,9 +308,9 @@ def open3align(molecules_sel, transform=True, nConformers=0):
 				for probe in molecules:
 					if(molecules.index(probe) is not molecules.index(reference)):
 						o3a = align_o3a(reference, probe, transform=True, nConformers=nConformers)
-
-	msg = "The score of the best alignment is {}".format(max_score)
-	chimera.statusline.show_message(msg)
+	if not _gui:
+		msg = "The score of the best alignment is {}".format(max_score)
+		chimera.statusline.show_message(msg)
 	
 	return max_score
 

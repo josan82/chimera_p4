@@ -105,9 +105,9 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
 		try:
-			max_score = open3align(molecules, nConformers=nConformers)
+			max_score = open3align(molecules, nConformers=nConformers, _gui=self)
 			msg = "Alignment done! Score: {}".format(max_score)
-			self.status(msg, color='red', blankAfter=0)
+			self.status(msg, color='green', blankAfter=0)
 		except Exception as e:
 			if len(molecules) < 2:
 				self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
@@ -118,8 +118,9 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		minRepeats = self._minRepeats.get()
 		try:
-			chimera_p4(molecules, minRepeats=minRepeats)
-			self.status("Pharmacophore done!", blankAfter=4)
+			self.status("Working...", blankAfter=0)
+			chimera_p4(molecules, minRepeats=minRepeats, _gui=self)
+			self.status("Pharmacophore done!", color='green', blankAfter=4)
 		except Exception as e:
 			if len(molecules) < 1:
 				self.status('You have to select at least 1 molecule!', color='red', blankAfter=4)
