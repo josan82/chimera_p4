@@ -135,7 +135,6 @@ class p4Dialog(PlumeBaseDialog):
 		self.Center(self.ui_input_opt_window)
 		self.ui_input_opt_window.title("Advanced Options")
 
-	# Script Functions
 	def Open_window(self, window, fill_function):
 		"""
 		Get sure the window is not opened
@@ -168,12 +167,6 @@ class p4Dialog(PlumeBaseDialog):
 			 window.winfo_reqheight()) / 2
 		window.geometry("+%d+%d" % (x, y))
 		window.deiconify()
-	
-	def Run(self):
-		"""
-		Default! Triggered action if you click on a Run button
-		"""
-		self.Close()
 
 	def Close(self):
 		"""
