@@ -13,7 +13,7 @@ from chimera.widgets import MoleculeScrolledListBox
 # Additional 3rd parties
 
 # Own
-from core import Controller, Model
+from core import Controller, Model, open3align, chimera_p4
 #from prefs import prefs, _defaults
 from libplume.ui import PlumeBaseDialog
 
@@ -40,53 +40,133 @@ BUTTON_STYLE = {
 }
 
 class p4Dialog(PlumeBaseDialog):
-	buttons = ('Run', 'Close')
+	buttons = ('Close')
 	default = None
-	help = 'https://www.insilichem.com'
+	help = 'https://github.com/josan82/chimera_p4'
 
 	def __init__(self, *args, **kwargs):
 		# GUI init
-		self.title = 'Plume pharmacophore'
+		self.title = 'Pharmacophore'
 		self.controller = None
 
 		#Variables
-		self._mergeTol = tk.IntVar()
+		self._nConformers = tk.IntVar()
+		#self._mergeTol = tk.IntVar()
 		self._minRepeats = tk.IntVar()
-		self._p4Id = tk.IntVar()
+		#self._p4Id = tk.IntVar()
 
 		# Fire up
 		super(p4Dialog, self).__init__(resizable=False, *args, **kwargs)
-		if not chimera.nogui:  # avoid useless errors during development
-			chimera.extension.manager.registerInstance(self)
+		#if not chimera.nogui:  # avoid useless errors during development
+		#	chimera.extension.manager.registerInstance(self)
 
 		# Set Defaults
 		self._set_defaults()
 
 	def _set_defaults(self):
-		pass
+		self._nConformers.set(0)
+		self._minRepeats.set(1)
 
 	def fill_in_ui(self, parent):
-		ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules')
-		ui_input_frame.rowconfigure(0, weight=1)
-		ui_input_frame.columnconfigure(1, weight=1)
-		self.ui_molecules = MoleculeScrolledListBox(ui_input_frame)
+		#First frame for selecting the molecules to align/calculate pharmacophore
+		self.ui_input_frame = tk.LabelFrame(self.canvas, text='Select molecules to align/calculate pharmacophore')
+		self.ui_input_frame.rowconfigure(0, weight=1)
+		self.ui_input_frame.columnconfigure(1, weight=1)
+		self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame, listbox_selectmode="extended")
 		self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
-		ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
+		self.ui_input_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
-		ui_config_frame = tk.LabelFrame(self.canvas, text='Configuration parameters')
-		tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
-		self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
-		tk.Label(ui_config_frame, text='Minimum appearences for feature').grid(row=2, column=0, padx=3, pady=3, sticky='e')
-		self.ui_min_repeats = tk.Entry(ui_config_frame, textvariable=self._minRepeats, width=6).grid(row=2, column=1, padx=3, pady=3)
-		tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
-		self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
-		ui_config_frame.pack(expand=True, fill='both', padx=5, pady=5)
+		#Second frame to perform alignments
+		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perform an alignment with open3align")
+		tk.Label(self.ui_o3align_frame, text='Number of conformers:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
+		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, bg='white', width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+		self.ui_o3align_frame.rowconfigure(0, weight=1)
+		self.ui_o3align_frame.columnconfigure(1, weight=1)
+		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align', command=self._cmd_o3align_btn)
+		self.ui_o3align_btn.grid(row=0, column=2, padx=5, pady=5)
+		self.ui_o3align_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
-	def Run(self):
+		
+		#Third frame to perform pharmacophores
+		self.ui_p4_frame = tk.LabelFrame(self.canvas, text='Perform a pharmacophore')
+		#tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
+		#self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
+		tk.Label(self.ui_p4_frame, text='Minimum of repetitions per feature:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
+		self.ui_min_repeats = tk.Entry(self.ui_p4_frame, textvariable=self._minRepeats, bg='white', width=3).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+		#tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
+		#self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
+		self.ui_p4_frame.rowconfigure(0, weight=1)
+		self.ui_p4_frame.columnconfigure(1, weight=1)
+		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore', command=self._cmd_p4_btn)
+		self.ui_p4_btn.grid(row=0, column=2, padx=5, pady=5)
+		self.ui_p4_options_btn = tk.Button(self.ui_p4_frame, text="Advanced Options", state="disabled", command=lambda: self.Open_window('ui_input_opt_window', self._fill_ui_input_opt_window))
+		self.ui_p4_options_btn.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+		self.ui_p4_frame.pack(expand=True, fill='both', padx=5, pady=5)
+		
+	def _cmd_o3align_btn(self):
+		molecules = self.ui_molecules.getvalue()
+		nConformers = self._nConformers.get()
+		try:
+			max_score = open3align(molecules, nConformers=nConformers, _gui=self)
+			msg = "Alignment done! Score: {}".format(max_score)
+			self.status(msg, color='green', blankAfter=0)
+		except Exception as e:
+			if len(molecules) < 2:
+				self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
+			else:
+				self.status('Could not align the molecules!', color='red', blankAfter=4)
+	
+	def _cmd_p4_btn(self):
+		molecules = self.ui_molecules.getvalue()
+		minRepeats = self._minRepeats.get()
+		try:
+			self.status("Working...", blankAfter=0)
+			chimera_p4(molecules, minRepeats=minRepeats, _gui=self)
+			self.status("Pharmacophore done!", color='green', blankAfter=4)
+		except Exception as e:
+			if len(molecules) < 1:
+				self.status('You have to select at least 1 molecule!', color='red', blankAfter=4)
+			else:
+				self.status('Could not perform the pharmacophore!', color='red', blankAfter=4)
+
+	def _fill_ui_input_opt_window(self):
+		# Create TopLevel window
+		self.ui_input_opt_window = tk.Toplevel()
+		self.Center(self.ui_input_opt_window)
+		self.ui_input_opt_window.title("Advanced Options")
+
+	def Open_window(self, window, fill_function):
 		"""
-		Default! Triggered action if you click on a Run button
+		Get sure the window is not opened
+		a second time
+		Parameters:
+		window: window to open
+		fill_function: fillin function for window
 		"""
-		self.Close()
+		try:
+			var_window = window
+			var_window.state()
+			if window == self.ui_stages_window:
+				self.set_stage_variables()
+				self.ui_stage_minimiz_tolerance_Entry.configure(state='disabled')
+				self.ui_stage_minimiz_maxsteps_Entry.configure(state ='disabled')
+				self.ui_stage_barostat_steps_Entry.configure(state='disabled')
+				self.ui_stage_pressure_Entry.configure(state='disabled')
+			var_window.deiconify()
+		except (AttributeError, tk.TclError):
+			return fill_function()
+
+	def Center(self, window):
+		"""
+		Update "requested size" from geometry manager
+		"""
+		window.update_idletasks()
+		x = (window.winfo_screenwidth() -
+			 window.winfo_reqwidth()) / 2
+		y = (window.winfo_screenheight() -
+			 window.winfo_reqheight()) / 2
+		window.geometry("+%d+%d" % (x, y))
+		window.deiconify()
 
 	def Close(self):
 		"""
