@@ -99,7 +99,7 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_p4_frame.columnconfigure(1, weight=1)
 		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore', command=self._cmd_p4_btn)
 		self.ui_p4_btn.grid(row=0, column=2, padx=5, pady=5)
-		self.ui_p4_options_btn = tk.Button(self.ui_p4_frame, text="Advanced Options", command=lambda: self.Open_window('ui_input_opt_window', self._fill_ui_input_opt_window))
+		self.ui_p4_options_btn = tk.Button(self.ui_p4_frame, text="Advanced Options", state="disabled", command=lambda: self.Open_window('ui_input_opt_window', self._fill_ui_input_opt_window))
 		self.ui_p4_options_btn.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 		self.ui_p4_frame.pack(expand=True, fill='both', padx=5, pady=5)
 		
