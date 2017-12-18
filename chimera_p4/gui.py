@@ -15,7 +15,7 @@ from chimera.widgets import MoleculeScrolledListBox
 # Own
 from core import Controller, Model, open3align, chimera_p4
 #from prefs import prefs, _defaults
-from libplume.ui import PlumeBaseDialog
+from base_gui.ui import PlumeBaseDialog
 
 ui = None
 def showUI():
