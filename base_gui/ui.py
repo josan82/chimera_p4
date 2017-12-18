@@ -160,7 +160,7 @@ class PlumeBaseDialog(ModelessDialog):
         big = text.tag_config("big", font="-size 18", foreground="#367159")
         text.insert(tk.INSERT, "InsiliChem", "big")
         text.insert(tk.INSERT, "\nDeveloped by ")
-        text.insert(tk.INSERT, "@jaimergp", hrefs.add(lambda *a: web.open_new(r"https://github.com/jaimergp")))
+        text.insert(tk.INSERT, "@josan82", hrefs.add(lambda *a: web.open_new(r"https://github.com/josan82")))
         text.insert(tk.INSERT, "\nat Maréchal Group, UAB, Spain")
         text.configure(state='disabled')
         logo.grid(row=5, column=0, sticky='we', padx=5, pady=3)
