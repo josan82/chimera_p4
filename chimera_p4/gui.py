@@ -51,7 +51,7 @@ class p4Dialog(PlumeBaseDialog):
 
 		#Variables
 		self._nConformers = tk.IntVar()
-		#self._mergeTol = tk.IntVar()
+		self._mergeTol = tk.DoubleVar()
 		self._minRepeats = tk.IntVar()
 		#self._p4Id = tk.IntVar()
 
@@ -66,6 +66,7 @@ class p4Dialog(PlumeBaseDialog):
 	def _set_defaults(self):
 		self._nConformers.set(0)
 		self._minRepeats.set(1)
+		self._mergeTol.set(1.5)
 
 	def fill_in_ui(self, parent):
 		#First frame for selecting the molecules to align/calculate pharmacophore
@@ -99,7 +100,7 @@ class p4Dialog(PlumeBaseDialog):
 		self.ui_p4_frame.columnconfigure(1, weight=1)
 		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore', command=self._cmd_p4_btn)
 		self.ui_p4_btn.grid(row=0, column=2, padx=5, pady=5)
-		self.ui_p4_options_btn = tk.Button(self.ui_p4_frame, text="Advanced Options", state="disabled", command=lambda: self.Open_window('ui_input_opt_window', self._fill_ui_input_opt_window))
+		self.ui_p4_options_btn = tk.Button(self.ui_p4_frame, text="Advanced Options", command=lambda: self.Open_window('ui_input_opt_window', self._fill_ui_input_opt_window))
 		self.ui_p4_options_btn.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 		self.ui_p4_frame.pack(expand=True, fill='both', padx=5, pady=5)
 		
@@ -119,9 +120,11 @@ class p4Dialog(PlumeBaseDialog):
 	def _cmd_p4_btn(self):
 		molecules = self.ui_molecules.getvalue()
 		minRepeats = self._minRepeats.get()
+		mergeTol = self._mergeTol.get()
+
 		try:
 			self.status("Working...", blankAfter=0)
-			chimera_p4(molecules, minRepeats=minRepeats, _gui=self)
+			chimera_p4(molecules, mergeTol=mergeTol, minRepeats=minRepeats, _gui=self)
 			self.status("Pharmacophore done!", color='green', blankAfter=4)
 		except Exception as e:
 			if len(molecules) < 1:
@@ -129,11 +132,46 @@ class p4Dialog(PlumeBaseDialog):
 			else:
 				self.status('Could not perform the pharmacophore!', color='red', blankAfter=4)
 
+	def _accept_adv_btn(self):
+		self._mergeTol.set(self.ui_input_opt_window.ui_mergeTol.get())
+
 	def _fill_ui_input_opt_window(self):
 		# Create TopLevel window
 		self.ui_input_opt_window = tk.Toplevel()
 		self.Center(self.ui_input_opt_window)
 		self.ui_input_opt_window.title("Advanced Options")
+		self.ui_input_opt_window.resizable(False, False)
+
+		#First frame for selecting the feature families that the user wants to calculate
+		self.ui_features_frame = tk.LabelFrame(self.ui_input_opt_window, text='Select features to calculate')
+		self.ui_features_frame.rowconfigure(0, weight=1)
+		self.ui_features_frame.columnconfigure(1, weight=1)
+		#self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame, listbox_selectmode="extended")
+		#self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
+		self.ui_features_frame.pack(expand=True, fill='both', padx=5, pady=5)
+
+		#Second frame to configure Merge Tolerance parameter
+		self.ui_mergeTol_frame = tk.LabelFrame(self.ui_input_opt_window, text="Merge tolerance")
+		text_mergeTol = ('The merge tolerance parameter defines the maximum distance \nin which two features of the same family will be considered close \nenough to be merged by the pharmacophore generator.\n')
+		tk.Label(self.ui_mergeTol_frame, text=text_mergeTol).grid(row=0, columnspan=2, padx=5, pady=5, sticky='w')
+		tk.Label(self.ui_mergeTol_frame, text='Merge tolerance value:').grid(row=1, column=0, padx=5, pady=5, sticky='e')
+		self.ui_input_opt_window.ui_mergeTol = tk.Entry(self.ui_mergeTol_frame, bg='white', width=6).grid(row=1, column=1, padx=5, pady=5, sticky='w')
+		self.ui_input_opt_window.ui_mergeTol.set(1.5)
+		self.ui_mergeTol_frame.rowconfigure(0, weight=1)
+		self.ui_mergeTol_frame.columnconfigure(1, weight=1)
+		self.ui_mergeTol_frame.pack(expand=True, fill='both', padx=5, pady=5)
+
+		#Third frame to configure other options
+		self.ui_other_frame = tk.LabelFrame(self.ui_input_opt_window, text='Other')
+		self.ui_other_frame.rowconfigure(0, weight=1)
+		self.ui_other_frame.columnconfigure(1, weight=1)
+		self.ui_other_frame.pack(expand=True, fill='both', padx=5, pady=5)
+
+		#Cancel and accept buttons
+		self.ui_input_opt_window.accept_btn = tk.Button(self.ui_input_opt_window, text="Accept", command=self._accept_adv_btn)
+		self.ui_input_opt_window.accept_btn.pack(side='right', padx=5, pady=5) 
+		#self.ui_input_opt_window.accept_btn.grid(row=3, column=2, padx=5, pady=5, sticky="e")
+
 
 	def Open_window(self, window, fill_function):
 		"""
