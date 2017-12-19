@@ -13,7 +13,7 @@ from chimera.widgets import MoleculeScrolledListBox
 # Additional 3rd parties
 
 # Own
-from core import Controller, Model, open3align, chimera_p4
+from core import Controller, Model, open3align, chimera_p4, _featColors
 #from prefs import prefs, _defaults
 from base_gui.ui import PlumeBaseDialog
 
@@ -53,7 +53,9 @@ class p4Dialog(PlumeBaseDialog):
 		self._nConformers = tk.IntVar()
 		self._mergeTol = tk.DoubleVar()
 		self._minRepeats = tk.IntVar()
-		#self._p4Id = tk.IntVar()
+		self._check1 = tk.BooleanVar()
+		self._check2 = tk.BooleanVar()
+		self._showFamily = {}
 
 		# Fire up
 		super(p4Dialog, self).__init__(resizable=False, *args, **kwargs)
@@ -67,6 +69,15 @@ class p4Dialog(PlumeBaseDialog):
 		self._nConformers.set(0)
 		self._minRepeats.set(1)
 		self._mergeTol.set(1.5)
+		self._showLegend = True
+		self._showVectors = True
+		default_families = ['Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe']
+		for family in _featColors.keys():
+			if family in default_families:
+				self._showFamily[family] = True
+			else:
+				self._showFamily[family] = False
+
 
 	def fill_in_ui(self, parent):
 		#First frame for selecting the molecules to align/calculate pharmacophore
@@ -90,12 +101,8 @@ class p4Dialog(PlumeBaseDialog):
 		
 		#Third frame to perform pharmacophores
 		self.ui_p4_frame = tk.LabelFrame(self.canvas, text='Perform a pharmacophore')
-		#tk.Label(ui_config_frame, text='Merge Tolerance').grid(row=1, column=0, padx=3, pady=3, sticky='e')
-		#self.ui_merge_tol = tk.Entry(ui_config_frame, textvariable=self._mergeTol, width=6).grid(row=1, column=1, padx=3, pady=3)
 		tk.Label(self.ui_p4_frame, text='Minimum of repetitions per feature:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
 		self.ui_min_repeats = tk.Entry(self.ui_p4_frame, textvariable=self._minRepeats, bg='white', width=3).grid(row=0, column=1, padx=5, pady=5, sticky='w')
-		#tk.Label(ui_config_frame, text='Pharmacophore Id').grid(row=3, column=0, padx=3, pady=3, sticky='e')
-		#self.ui_p4_Id = tk.Entry(ui_config_frame, textvariable=self._p4Id, width=6).grid(row=3, column=1, padx=3, pady=3)
 		self.ui_p4_frame.rowconfigure(0, weight=1)
 		self.ui_p4_frame.columnconfigure(1, weight=1)
 		self.ui_p4_btn = tk.Button(self.ui_p4_frame, text='Make pharmacophore', command=self._cmd_p4_btn)
@@ -121,10 +128,14 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		minRepeats = self._minRepeats.get()
 		mergeTol = self._mergeTol.get()
+		families = ()
+		for family in self._showFamily.keys():
+			if self._showFamily[family]:
+				families = families + tuple([family])
 
 		try:
 			self.status("Working...", blankAfter=0)
-			chimera_p4(molecules, mergeTol=mergeTol, minRepeats=minRepeats, _gui=self)
+			chimera_p4(molecules, mergeTol=mergeTol, minRepeats=minRepeats, _gui=self, showVectors=self._showVectors, showLegend=self._showLegend, families=families)
 			self.status("Pharmacophore done!", color='green', blankAfter=4)
 		except Exception as e:
 			if len(molecules) < 1:
@@ -134,6 +145,14 @@ class p4Dialog(PlumeBaseDialog):
 
 	def _accept_adv_btn(self):
 		self._mergeTol.set(self.ui_input_opt_window.ui_mergeTol.get())
+		self._showLegend = self._check1.get()
+		self._showVectors = self._check2.get()
+		for family in _featColors.keys():
+			self._showFamily[family] = self._tempFamilies[family].get()
+		self.ui_input_opt_window.destroy()
+
+	def _cancel_adv_btn(self):
+		self.ui_input_opt_window.destroy()
 
 	def _fill_ui_input_opt_window(self):
 		# Create TopLevel window
@@ -144,10 +163,16 @@ class p4Dialog(PlumeBaseDialog):
 
 		#First frame for selecting the feature families that the user wants to calculate
 		self.ui_features_frame = tk.LabelFrame(self.ui_input_opt_window, text='Select features to calculate')
+		self._tempFamilies = {}
+		for i, family in enumerate(self._showFamily.keys()):
+			self._tempFamilies[family] = tk.BooleanVar()
+			self._tempFamilies[family].set(self._showFamily[family])
+			self.ui_features_frame.ui_showFeature = tk.Checkbutton(self.ui_features_frame, text=family, variable=self._tempFamilies[family])
+			grid_row = int(i/2)
+			grid_column = 1 if (i%2) else 0
+			self.ui_features_frame.ui_showFeature.grid(row=grid_row, column=grid_column, padx=5, pady=5, sticky='w')
 		self.ui_features_frame.rowconfigure(0, weight=1)
 		self.ui_features_frame.columnconfigure(1, weight=1)
-		#self.ui_molecules = MoleculeScrolledListBox(self.ui_input_frame, listbox_selectmode="extended")
-		#self.ui_molecules.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
 		self.ui_features_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
 		#Second frame to configure Merge Tolerance parameter
@@ -155,23 +180,31 @@ class p4Dialog(PlumeBaseDialog):
 		text_mergeTol = ('The merge tolerance parameter defines the maximum distance \nin which two features of the same family will be considered close \nenough to be merged by the pharmacophore generator.\n')
 		tk.Label(self.ui_mergeTol_frame, text=text_mergeTol).grid(row=0, columnspan=2, padx=5, pady=5, sticky='w')
 		tk.Label(self.ui_mergeTol_frame, text='Merge tolerance value:').grid(row=1, column=0, padx=5, pady=5, sticky='e')
-		self.ui_input_opt_window.ui_mergeTol = tk.Entry(self.ui_mergeTol_frame, bg='white', width=6).grid(row=1, column=1, padx=5, pady=5, sticky='w')
-		self.ui_input_opt_window.ui_mergeTol.set(1.5)
+		self.ui_input_opt_window.ui_mergeTol = tk.Entry(self.ui_mergeTol_frame, bg='white', width=6)
+		self.ui_input_opt_window.ui_mergeTol.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+		self.ui_input_opt_window.ui_mergeTol.insert(0, self._mergeTol.get())
 		self.ui_mergeTol_frame.rowconfigure(0, weight=1)
 		self.ui_mergeTol_frame.columnconfigure(1, weight=1)
 		self.ui_mergeTol_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
 		#Third frame to configure other options
 		self.ui_other_frame = tk.LabelFrame(self.ui_input_opt_window, text='Other')
+		self._check1.set(self._showLegend)
+		self._check2.set(self._showVectors)
+		self.ui_other_frame.ui_showLegend = tk.Checkbutton(self.ui_other_frame, text='Show legend', variable=self._check1)
+		self.ui_other_frame.ui_showLegend.grid(row=0, column=0, padx=5, pady=5, sticky='w')
+		#The showVectors functionality has to be revised and corrected before activate this option
+		#self.ui_other_frame.ui_showVectors = tk.Checkbutton(self.ui_other_frame, text='Show vectors', variable=self._check2)
+		#self.ui_other_frame.ui_showVectors.grid(row=1, column=0, padx=5, pady=5, sticky='w')
 		self.ui_other_frame.rowconfigure(0, weight=1)
 		self.ui_other_frame.columnconfigure(1, weight=1)
 		self.ui_other_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
 		#Cancel and accept buttons
 		self.ui_input_opt_window.accept_btn = tk.Button(self.ui_input_opt_window, text="Accept", command=self._accept_adv_btn)
+		self.ui_input_opt_window.cancel_btn = tk.Button(self.ui_input_opt_window, text="Cancel", command=self._cancel_adv_btn)
+		self.ui_input_opt_window.cancel_btn.pack(side='right', padx=5, pady=5)
 		self.ui_input_opt_window.accept_btn.pack(side='right', padx=5, pady=5) 
-		#self.ui_input_opt_window.accept_btn.grid(row=3, column=2, padx=5, pady=5, sticky="e")
-
 
 	def Open_window(self, window, fill_function):
 		"""
