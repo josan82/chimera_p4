@@ -8,7 +8,7 @@ import Tkinter as tk
 # Chimera stuff
 import chimera
 from chimera.baseDialog import ModelessDialog
-from chimera.widgets import MoleculeScrolledListBox
+from chimera.widgets import MoleculeScrolledListBox, MoleculeOptionMenu
 
 # Additional 3rd parties
 
@@ -55,6 +55,8 @@ class p4Dialog(PlumeBaseDialog):
 		self._minRepeats = tk.IntVar()
 		self._check1 = tk.BooleanVar()
 		self._check2 = tk.BooleanVar()
+		self._check3 = tk.BooleanVar()
+		self._useRef = tk.BooleanVar()
 		self._showFamily = {}
 
 		# Fire up
@@ -71,6 +73,7 @@ class p4Dialog(PlumeBaseDialog):
 		self._mergeTol.set(1.5)
 		self._showLegend = True
 		self._showVectors = True
+		self._useRef.set(False)
 		default_families = ['Donor','Acceptor','NegIonizable','PosIonizable','Aromatic', 'LumpedHydrophobe']
 		for family in _featColors.keys():
 			if family in default_families:
@@ -90,12 +93,16 @@ class p4Dialog(PlumeBaseDialog):
 
 		#Second frame to perform alignments
 		self.ui_o3align_frame = tk.LabelFrame(self.canvas, text="Perform an alignment with open3align")
-		tk.Label(self.ui_o3align_frame, text='Number of conformers:').grid(row=0, column=0, padx=5, pady=5, sticky='w')
-		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, bg='white', width=6).grid(row=0, column=1, padx=5, pady=5, sticky='w')
+		self.ui_molecule = MoleculeOptionMenu(self.ui_o3align_frame)
+		self.ui_molecule.grid(row=0, columnspan=3, padx=5, pady=5, sticky='news')
+		self.ui_o3align_frame.ui_useRef = tk.Checkbutton(self.ui_o3align_frame, text="Use this molecule as reference for the alignment", variable=self._useRef)
+		self.ui_o3align_frame.ui_useRef.grid(row=1, columnspan=3, padx=5, pady=5, sticky='n')
+		tk.Label(self.ui_o3align_frame, text='Number of conformers:').grid(row=2, column=0, padx=5, pady=5, sticky='w')
+		self.ui_nconformers = tk.Entry(self.ui_o3align_frame, textvariable=self._nConformers, bg='white', width=6).grid(row=2, column=1, padx=5, pady=5, sticky='w')
 		self.ui_o3align_frame.rowconfigure(0, weight=1)
 		self.ui_o3align_frame.columnconfigure(1, weight=1)
 		self.ui_o3align_btn = tk.Button(self.ui_o3align_frame, text='Align', command=self._cmd_o3align_btn)
-		self.ui_o3align_btn.grid(row=0, column=2, padx=5, pady=5)
+		self.ui_o3align_btn.grid(row=2, column=2, padx=5, pady=5)
 		self.ui_o3align_frame.pack(expand=True, fill='both', padx=5, pady=5)
 
 		
@@ -114,8 +121,9 @@ class p4Dialog(PlumeBaseDialog):
 	def _cmd_o3align_btn(self):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
+		ref = self.ui_molecule.getvalue() if self._useRef.get() else None
 		try:
-			max_score = open3align(molecules, nConformers=nConformers, _gui=self)
+			max_score = open3align(molecules, nConformers=nConformers, reference=ref, _gui=self)
 			msg = "Alignment done! Score: {}".format(max_score)
 			self.status(msg, color='green', blankAfter=0)
 		except Exception as e:
@@ -149,6 +157,11 @@ class p4Dialog(PlumeBaseDialog):
 		self._showVectors = self._check2.get()
 		for family in _featColors.keys():
 			self._showFamily[family] = self._tempFamilies[family].get()
+		self._useRef = self._tempUseRef.get()
+		if self._useRef:
+			self._baseMol = self.ui_molecule.getvalue()
+		else:
+			self._baseMol = None
 		self.ui_input_opt_window.destroy()
 
 	def _cancel_adv_btn(self):

@@ -269,7 +269,7 @@ def align_o3a(reference, probe, sanitize=True, nConformers=0, **kwargs):
 	return o3a_result.Score(), new_probe_pos  #return the alignment score and the new atom positions
 
 #New function
-def open3align(molecules_sel, transform=True, nConformers=0, _gui=None):
+def open3align(molecules_sel, transform=True, nConformers=0, reference=None, _gui=None):
 	#Delete possible previous pharmacophores
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	runCommand("2dlabels delete *")
@@ -278,16 +278,18 @@ def open3align(molecules_sel, transform=True, nConformers=0, _gui=None):
 	
 	if _gui:
 		molecules = molecules_sel
+		references = [reference] if reference else molecules
 	else:
 		molecules = molecules_sel.molecules()
+		references = [reference.molecules()] if reference else molecules
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
 	
 	#Calculating the best scored alignment
 	max_score = 0.0
-	for i, reference in enumerate(molecules):
-		msg = "Processing molecule {} of {}".format(i+1, len(molecules))
+	for i, reference in enumerate(references):
+		msg = "Processing molecule {} of {}".format(i+1, len(references))
 		if _gui:
 			_gui.status(msg, blankAfter=0)
 		else:
