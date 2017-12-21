@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import chimera
+from chimera import Vector
 
 import numpy as np
 
@@ -457,17 +458,11 @@ def _return_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
 	return atom_positions
 
 def _apply_atom_positions(chimera_mol, new_pos_dict):
-	with open('coords.txt', 'a') as f:
-		for atom in new_pos_dict.keys():
-			coord = atom.xformCoord()
-			atom.setCoord(new_pos_dict[atom])
-			coord2 = atom.xformCoord()
-			print("Atom with name: {} has coordinates: {}".format(atom.name, atom.coord()), file=f)
-			print("And transformed coordinates: {},{},{};{},{},{}".format(coord.x, coord.y, coord.z, coord2.x, coord2.y, coord2.z), file=f)
-		print("*****************", file=f)
-	
+	for atom in new_pos_dict.keys():
+		atom.setCoord(new_pos_dict[atom])
 	chimera_mol.computeIdatmTypes()
-
+	#Undo possible previous rotations/translations of the molecule
+	chimera_mol.openState.xform = chimera.Xform.identity()
 
 def _del_chimeraHs(molecule):
 	for atom in molecule.atoms:

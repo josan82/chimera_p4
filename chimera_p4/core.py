@@ -253,14 +253,12 @@ def align_o3a(reference, probe, sanitize=True, nConformers=0, **kwargs):
 		o3as = GetO3AForProbeConfs(rdk_probe, rdk_reference, numThreads=0)
 	
 		highest_conf_score = 0.0
-		conf_id = 0
-		for o3a in o3as:
+		for conf_id, o3a in enumerate(o3as):
 			score_conf = o3a.Score()
 			if score_conf > highest_conf_score:
 				highest_conf_score = score_conf
 				o3a_result = o3a
 				highest_conf_id = conf_id
-			conf_id += 1
 	else:
 		o3a_result = GetO3A(rdk_probe, rdk_reference, probe_params, reference_params)
 		highest_conf_id = 0
