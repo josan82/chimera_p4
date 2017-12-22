@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import chimera
+from chimera import Vector
 
 import numpy as np
 
@@ -405,7 +406,7 @@ def _fix_nitro(molecule):
 				atom.SetIsAromatic(aromHolder)
 
 #Function to convert from Chimera to RDKit
-def _chimera_to_rdkit(molecule, sanitize=True):
+def _chimera_to_rdkit(molecule, sanitize=True, useXformCoord=True):
 	from rdkit.Chem import Mol, RWMol, Atom, Conformer
 	mol = Mol()
 	emol = RWMol(mol)
@@ -415,7 +416,10 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 	for atom in molecule.atoms:
 		a = Atom(atom.element.number)
 		atom_map[atom] = i = emol.AddAtom(a)
-		emol.GetConformer().SetAtomPosition(i, atom.coord().data())
+		if useXformCoord:
+			emol.GetConformer().SetAtomPosition(i, atom.xformCoord())
+		else:
+			emol.GetConformer().SetAtomPosition(i, atom.coord())
 	for bond in molecule.bonds:
 		a1, a2 = bond.atoms
 		if hasattr(bond, 'order') and bond.order:
@@ -433,9 +437,10 @@ def _chimera_to_rdkit(molecule, sanitize=True):
 	return mol, atom_map
 
 #### Open3Align code
-def _apply_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
+def _return_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
 	from chimera import Coord, Point
 
+	atom_positions = {}
 	for rdkit_atom in rdkit_mol.GetAtoms():
 		chimera_atom = list(atom_map.keys())[list(atom_map.values()).index(rdkit_atom.GetIdx())]
 
@@ -444,9 +449,16 @@ def _apply_atom_positions(rdkit_mol, chimera_mol, atom_map, rdkit_confId=0):
 		atom_position[1] = list(rdkit_mol.GetConformer(id=rdkit_confId).GetAtomPosition(rdkit_atom.GetIdx()))[1]
 		atom_position[2] = list(rdkit_mol.GetConformer(id=rdkit_confId).GetAtomPosition(rdkit_atom.GetIdx()))[2]
 
-		chimera_atom.setCoord(Coord(atom_position))
-		
+		atom_positions[chimera_atom] = Coord(atom_position)
+
+	return atom_positions
+
+def _apply_atom_positions(chimera_mol, new_pos_dict):
+	for atom in new_pos_dict.keys():
+		atom.setCoord(new_pos_dict[atom])
 	chimera_mol.computeIdatmTypes()
+	#Undo possible previous rotations/translations of the molecule
+	chimera_mol.openState.xform = chimera.Xform.identity()
 
 def _del_chimeraHs(molecule):
 	for atom in molecule.atoms:

@@ -23,8 +23,8 @@ from rdkit.Chem.FeatMaps import FeatMaps, FeatMapUtils as FMU
 from rdkit.Chem.Features import FeatDirUtilsRD as FeatDirUtils
 from rdkit.Chem.AllChem import BuildFeatureFactory, MMFFGetMoleculeProperties, EmbedMultipleConfs, AddHs, RemoveHs
 
-from aux_functions import _chimera_to_rdkit, _GetAcceptor1FeatVects, _GetDonor2FeatVects, _MergeFeatPoints, _apply_atom_positions, _del_chimeraHs
-#import aux_functions as aux
+from aux_functions import _chimera_to_rdkit, _GetAcceptor1FeatVects, _GetDonor2FeatVects, _MergeFeatPoints, _return_atom_positions, _apply_atom_positions, _del_chimeraHs
+
 
 FEATURES_FILE = os.path.join(os.path.dirname(__file__), 'BaseFeatures.fdef')
 
@@ -103,7 +103,7 @@ class p4_element(object):
 		except chimera.NotABug:
 			print(bild)
 		else:
-			chimera.openModels.add(vrml, baseId=self._id, subid=self._subid)
+			chimera.openModels.add(vrml, baseId=self._id, subid=self._subid, shareXform=0)
 			self._subid += 1
 		return vrml
 
@@ -234,8 +234,8 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 	
 	return True
 
-#Function from plume with small changes in sanitization
-def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **kwargs):
+#Function based on plume subalign
+def align_o3a(reference, probe, sanitize=True, nConformers=0, **kwargs):
 	_del_chimeraHs(reference)
 	_del_chimeraHs(probe)
 	rdk_reference, ref_map = _chimera_to_rdkit(reference)
@@ -253,27 +253,23 @@ def align_o3a(reference, probe, transform=True, sanitize=True, nConformers=0, **
 		o3as = GetO3AForProbeConfs(rdk_probe, rdk_reference, numThreads=0)
 	
 		highest_conf_score = 0.0
-		conf_id = 0
-		for o3a in o3as:
+		for conf_id, o3a in enumerate(o3as):
 			score_conf = o3a.Score()
 			if score_conf > highest_conf_score:
 				highest_conf_score = score_conf
 				o3a_result = o3a
 				highest_conf_id = conf_id
-			conf_id += 1
 	else:
 		o3a_result = GetO3A(rdk_probe, rdk_reference, probe_params, reference_params)
 		highest_conf_id = 0
-	
-	#rmsd, xform = o3a_result.Trans()
-	if transform:
-		o3a_result.Align()
-		_apply_atom_positions(rdk_probe, probe, probe_map, rdkit_confId=highest_conf_id)
-	
-	return o3a_result   #return the alignment
+
+	o3a_result.Align()
+	new_probe_pos = _return_atom_positions(rdk_probe, probe, probe_map, rdkit_confId=highest_conf_id)
+
+	return o3a_result.Score(), new_probe_pos  #return the alignment score and the new atom positions
 
 #New function
-def open3align(molecules_sel, transform=True, nConformers=0, _gui=None):
+def open3align(molecules_sel, transform=True, nConformers=0, reference=None, _gui=None):
 	#Delete possible previous pharmacophores
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	runCommand("2dlabels delete *")
@@ -282,37 +278,42 @@ def open3align(molecules_sel, transform=True, nConformers=0, _gui=None):
 	
 	if _gui:
 		molecules = molecules_sel
+		references = [reference] if reference else molecules
 	else:
 		molecules = molecules_sel.molecules()
+		references = [reference.molecules()] if reference else molecules
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
 	
 	#Calculating the best scored alignment
 	max_score = 0.0
-	for i, reference in enumerate(molecules):
-		msg = "Processing molecule {} of {}".format(i+1, len(molecules))
+	for i, reference in enumerate(references):
+		msg = "Processing molecule {} of {}".format(i+1, len(references))
 		if _gui:
 			_gui.status(msg, blankAfter=0)
 		else:
 			chimera.statusline.show_message(msg)
 		align_score = 0.0
+		new_atom_pos = {}
 		for probe in molecules:
-			if(molecules.index(probe) is not molecules.index(reference)):
-				o3a = align_o3a(reference, probe, transform=False, nConformers=nConformers)
-				align_score += o3a.Score()
+			score, new_atom_pos[probe] = align_o3a(reference, probe, nConformers=nConformers)
+			align_score += score
 		
 		if align_score > max_score:
 			max_score = align_score
-			if transform:
-				for probe in molecules:
-					if(molecules.index(probe) is not molecules.index(reference)):
-						o3a = align_o3a(reference, probe, transform=True, nConformers=nConformers)
+			max_new_atom_pos = new_atom_pos
+		
+	if transform:
+		for mol in max_new_atom_pos.keys():
+			_apply_atom_positions(mol, max_new_atom_pos[mol])
+
 	if not _gui:
 		msg = "The score of the best alignment is {}".format(max_score)
 		chimera.statusline.show_message(msg)
 	
 	return max_score
+
 
 ### GUI Code
 class Controller(object):
