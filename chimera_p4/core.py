@@ -103,7 +103,7 @@ class p4_element(object):
 		except chimera.NotABug:
 			print(bild)
 		else:
-			chimera.openModels.add(vrml, baseId=self._id, subid=self._subid)
+			chimera.openModels.add(vrml, baseId=self._id, subid=self._subid, shareXform=0)
 			self._subid += 1
 		return vrml
 
@@ -127,7 +127,7 @@ def calc_p4map(molecules, families=('Donor','Acceptor','NegIonizable','PosIoniza
 	rdkit_maps = []
 	for mol in molecules:
 		_del_chimeraHs(mol)
-		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol, useXformCoord=False)
+		rdkit_mol, rdkit_map = _chimera_to_rdkit(mol)
 		rdkit_mol = Chem.AddHs(rdkit_mol, addCoords=True)
 		rdkit_mols.append(rdkit_mol)
 		rdkit_maps.append(rdkit_map)
