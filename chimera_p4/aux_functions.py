@@ -406,24 +406,20 @@ def _fix_nitro(molecule):
 				atom.SetIsAromatic(aromHolder)
 
 #Function to convert from Chimera to RDKit
-def _chimera_to_rdkit(molecule, sanitize=True):
+def _chimera_to_rdkit(molecule, sanitize=True, useXformCoord=True):
 	from rdkit.Chem import Mol, RWMol, Atom, Conformer
 	mol = Mol()
 	emol = RWMol(mol)
 	emol.AddConformer(Conformer())
 	atom_map = {}
-	"""
-	with open('coords.txt', 'a') as f:
-		for atom in molecule.atoms:
-			coord = atom.xformCoord()
-			print("Atom with name: {} has coordinates: {}".format(atom.name, atom.coord()), file=f)
-			print("And transformed coordinates: {},{},{}".format(coord.x, coord.y, coord.z), file=f)
-		print("----------------", file=f)
-	"""
+	
 	for atom in molecule.atoms:
 		a = Atom(atom.element.number)
 		atom_map[atom] = i = emol.AddAtom(a)
-		emol.GetConformer().SetAtomPosition(i, atom.xformCoord())
+		if useXformCoord:
+			emol.GetConformer().SetAtomPosition(i, atom.xformCoord())
+		else:
+			emol.GetConformer().SetAtomPosition(i, atom.coord())
 	for bond in molecule.bonds:
 		a1, a2 = bond.atoms
 		if hasattr(bond, 'order') and bond.order:
