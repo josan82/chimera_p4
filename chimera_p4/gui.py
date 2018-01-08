@@ -122,15 +122,19 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
 		ref = self.ui_molecule.getvalue() if self._useRef.get() else None
-		try:
-			max_score = open3align(molecules, nConformers=nConformers, reference=ref, _gui=self)
-			msg = "Alignment done! Score: {}".format(max_score)
-			self.status(msg, color='green', blankAfter=0)
-		except Exception as e:
-			if len(molecules) < 2:
-				self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
-			else:
-				self.status('Could not align the molecules!', color='red', blankAfter=4)
+
+		if not ref or ref in molecules:
+			try:
+				max_score = open3align(molecules, nConformers=nConformers, reference=ref, _gui=self)
+				msg = "Alignment done! Score: {}".format(max_score)
+				self.status(msg, color='green', blankAfter=0)
+			except Exception as e:
+				if len(molecules) < 2:
+					self.status('You have to select at least 2 molecules!', color='red', blankAfter=4)
+				else:
+					self.status('Could not align the molecules!', color='red', blankAfter=4)
+		else:
+			self.status('The reference must belong to selected molecules', color='red', blankAfter=4)
 	
 	def _cmd_p4_btn(self):
 		molecules = self.ui_molecules.getvalue()
