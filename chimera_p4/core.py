@@ -281,6 +281,8 @@ def open3align(molecules_sel, transform=True, nConformers=0, reference=None, _gu
 		references = [reference] if reference else molecules
 	else:
 		molecules = molecules_sel.molecules()
+		if reference and reference.molecules() not in molecules:
+			raise chimera.UserError("Reference must belong to selected molecules")
 		references = [reference.molecules()] if reference else molecules
 
 	if not len(molecules) > 1:
