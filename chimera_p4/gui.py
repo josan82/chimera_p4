@@ -125,7 +125,7 @@ class p4Dialog(PlumeBaseDialog):
 
 		if not ref or ref in molecules:
 			try:
-				max_score = open3align(molecules, nConformers=nConformers, reference=ref, _gui=self)
+				max_score = open3align(molecules, nConformers=nConformers, reference=[ref], _gui=self)
 				msg = "Alignment done! Score: {}".format(max_score)
 				self.status(msg, color='green', blankAfter=0)
 			except Exception as e:

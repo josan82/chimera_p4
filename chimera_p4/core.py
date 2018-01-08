@@ -200,10 +200,7 @@ def chimera_p4(molecules_sel, mergeTol=1.5, minRepeats=1, showVectors=True, fami
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	registerAttribute(chimera.Bond, "order")
 	
-	if _gui:
-		molecules = molecules_sel
-	else:
-		molecules = molecules_sel.molecules()
+	molecules = molecules_sel
 
 	if not len(molecules) > 0:
 		raise chimera.UserError("At least 1 molecule is needed to do a pharmacophore")
@@ -269,21 +266,15 @@ def align_o3a(reference, probe, sanitize=True, nConformers=0, **kwargs):
 	return o3a_result.Score(), new_probe_pos  #return the alignment score and the new atom positions
 
 #New function
-def open3align(molecules_sel, transform=True, nConformers=0, reference=None, _gui=None):
+def open3align(molecules_sel, reference=None, transform=True, nConformers=0, _gui=None):
 	#Delete possible previous pharmacophores
 	chimera.openModels.remove(chimera.openModels.list(id=100))
 	runCommand("2dlabels delete *")
 	
 	registerAttribute(chimera.Bond, "order")
 	
-	if _gui:
-		molecules = molecules_sel
-		references = [reference] if reference else molecules
-	else:
-		molecules = molecules_sel.molecules()
-		if reference and reference.molecules() not in molecules:
-			raise chimera.UserError("Reference must belong to selected molecules")
-		references = [reference.molecules()] if reference else molecules
+	molecules = molecules_sel
+	references = reference if reference else molecules
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")

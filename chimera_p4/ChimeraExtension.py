@@ -11,12 +11,13 @@ Tix._default_root = tk._default_root
 def cmd_p4(cmdName, args):
 	from Midas.midas_text import doExtensionFunc
 	from chimera_p4 import chimera_p4
-	doExtensionFunc(chimera_p4, args, specInfo=[("molSpec", "molecules_sel", None)])
+	doExtensionFunc(chimera_p4, args, specInfo=[("molSpec", "molecules_sel", "molecules")])
 
 def cmd_o3align(cmdName, args):
     from Midas.midas_text import doExtensionFunc
     from chimera_p4 import open3align
-    doExtensionFunc(open3align, args, specInfo=[("molSpec", "molecules_sel", None), ("molSpec", "reference", None)])
+    doExtensionFunc(open3align, args, specInfo=[("molSpec", "molecules_sel", "molecules"), 
+                                                ("refspec", "reference", "molecules")])
 
 addCommand("p4", cmd_p4)
 addCommand("open3align", cmd_o3align)
