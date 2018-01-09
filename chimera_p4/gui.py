@@ -122,7 +122,7 @@ class p4Dialog(PlumeBaseDialog):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
 		ref = self.ui_molecule.getvalue() if self._useRef.get() else None
-		ref = [ref] if ref
+		ref = [ref] if ref else None
 
 		if not ref or ref in molecules:
 			try:
