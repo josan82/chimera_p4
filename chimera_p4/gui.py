@@ -121,7 +121,7 @@ class p4Dialog(PlumeBaseDialog):
 	def _cmd_o3align_btn(self):
 		molecules = self.ui_molecules.getvalue()
 		nConformers = self._nConformers.get()
-		ref = [self.ui_molecule.getvalue()] if self._useRef.get() else None
+		ref = list(self.ui_molecule.getvalue()) if self._useRef.get() else None
 
 		if not ref or ref in molecules:
 			try:
