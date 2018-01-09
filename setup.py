@@ -21,7 +21,7 @@ long_description = read('README.md')
 
 setup(
     name='chimera_p4',
-    version='0.2.2',
+    version='0.2.3',
     url='https://github.com/josan82/chimera_p4',
     author='José Emilio Sánchez',
     author_email='joseemilio.sanchez@uab.cat',
