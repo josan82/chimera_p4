@@ -275,8 +275,8 @@ def open3align(molecules_sel, reference=None, transform=True, nConformers=0, _gu
 	
 	molecules = molecules_sel
 	references = list(reference) if reference else molecules
-	print(molecules)
-	print(reference)
+	msg = "The The reference is {}".format(reference)
+	chimera.statusline.show_message(msg)
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
