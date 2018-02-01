@@ -17,7 +17,7 @@ def cmd_o3align(cmdName, args):
     from Midas.midas_text import doExtensionFunc
     from chimera_p4 import open3align
     doExtensionFunc(open3align, args, specInfo=[("molSpec", "molecules_sel", "molecules"), 
-                                                ("refSpec", "reference", "molecules")])
+                                                ("refspec", "reference", "molecules")])
 
 addCommand("p4", cmd_p4)
 addCommand("open3align", cmd_o3align)
