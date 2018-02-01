@@ -274,7 +274,7 @@ def open3align(molecules_sel, reference=None, transform=True, nConformers=0, _gu
 	registerAttribute(chimera.Bond, "order")
 	
 	molecules = molecules_sel
-	references = reference if reference else molecules
+	references = list(reference) if reference else molecules
 
 	if not len(molecules) > 1:
 		raise chimera.UserError("At least 2 molecules are needed to do an alignment")
