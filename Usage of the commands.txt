@@ -1,12 +1,12 @@
 Usage of command open3align:
 
-open3align spec [reference mol-spec] [nConformers int]
+open3align spec [refspec mol-spec] [nConformers int]
 
 Parameters
 ----------
 spec, type mol-spec: molecules on which the alignment will be performed.
 
-reference, type mol-spec (optional, default=None) : molecule that will be used
+refspec, type mol-spec (optional, default=None) : molecule that will be used
 	as reference to calculate the alignment. By default, the algorithm
 	will calculate all the possible alignments using all the molecules as 
 	reference and will return the best scored one.
@@ -40,7 +40,7 @@ open3align #0-5
 Alignment of the molecules from id 0 to id 5, without using conformers 
 generation.
 
-open3align #0-5 reference #1
+open3align #0-5 refspec #1
 Alignment of the molecules from id 0 to id 5, without using conformers
 generation, and fixing the reference molecule to id 1.
 
