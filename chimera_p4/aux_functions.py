@@ -397,10 +397,7 @@ def _fix_nitro(molecule):
 			atom.SetIsAromatic(0)
 			if valence == 4:
 				for neighbor in atom.GetNeighbors():
-					print (neighbor.GetAtomicNum())
-					print(molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx()).GetBondType())
 					if (neighbor.GetAtomicNum() == 8) and (molecule.GetBondBetweenAtoms(atom.GetIdx(), neighbor.GetIdx()).GetBondType() == Chem.BondType.SINGLE):
-						print('entra')
 						atom.SetFormalCharge(1)
 						neighbor.SetFormalCharge(-1)
 						break
