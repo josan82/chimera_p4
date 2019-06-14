@@ -39,7 +39,7 @@ BUTTON_STYLE = {
 	'highlightthickness': 0,
 }
 
-class p4Dialog(PlumeBaseDialog):
+class p4Dialog(TangramBaseDialog):
 	buttons = ('Close')
 	default = None
 	help = 'https://github.com/josan82/chimera_p4'
