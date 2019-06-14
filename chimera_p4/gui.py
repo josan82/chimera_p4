@@ -15,7 +15,7 @@ from chimera.widgets import MoleculeScrolledListBox, MoleculeOptionMenu
 # Own
 from core import Controller, Model, open3align, chimera_p4, _featColors
 #from prefs import prefs, _defaults
-from base_gui.ui import PlumeBaseDialog
+from base_gui.ui import TangramBaseDialog
 
 ui = None
 def showUI():
